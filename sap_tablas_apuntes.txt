@@ -1,0 +1,15 @@
+
+bsid - clientes no compensada
+bsad - clientes compensada
+bsis - cuentas no compensada
+bsas - cuenta compensada
+bsik - acreedor no compensada
+bsak - acreedor compensada
+
+E070 - Transport Organizer: Cabecera de órdenes/tareas
+E07T - Transport Organizer: Descripciones breves de órdenes/tareas
+
+T001 - sociedades
+T001K - area de valoracion
+T001w - centros
+T024E - organizacion de compras

@@ -1,0 +1,157 @@
+
+
+	<persistence-unit name="App" transaction-type="RESOURCE_LOCAL">
+		<class>com.Caficultor</class>
+		<properties>
+			<property name="eclipselink.logging.level.sql" value="FINE"/>
+			<property name="javax.persistence.jdbc.driver" value="oracle.jdbc.OracleDriver" />
+			<property name="javax.persistence.jdbc.url" value="jdbc:oracle:thin:@192.168.11.43:1527:SICADES" />
+			<property name="javax.persistence.jdbc.user" value="sica" />
+			<property name="javax.persistence.jdbc.password" value="9ejv8QNNhczxnw__cfa" />
+		</properties>
+	</persistence-unit>	
+	
+	EntityManagerFactory factory = Persistence.createEntityManagerFactory("App");
+	EntityManager manager = factory.createEntityManager();
+
+	Query query = manager.createQuery("select c from Caficultor c");
+	List<?> list = query.setMaxResults(5).getResultList();
+
+	for (Object object : list) {
+		System.out.println(((Caficultor) object).getId());
+	}
+
+	manager.close();
+
+************************************************************************************************************
+
+As you’ve seen, JPA offers 4 different ways to generate primary key values:
+
+AUTO: Hibernate selects the generation strategy based on the used dialect,
+IDENTITY: Hibernate relies on an auto-incremented database column to generate the primary key,
+SEQUENCE: Hibernate requests the primary key value from a database sequence,
+TABLE: Hibernate uses a database table to simulate a sequence.
+
+//Generador de secuencias
+
+	@Id
+	@Column(name = "CD_CONTRACT", unique = true, updatable = false, insertable = true, nullable = false)
+	@GeneratedValue(generator = "SeqAppCdInvoice")
+	@SequenceGenerator(name = "SeqAppCdInvoice", sequenceName = "CPP_CONTRACT_SEQ", allocationSize = 1)
+	public Integer getCdContract() {
+		return cdContract;
+	}
+
+       @Id
+       @GeneratedValue(strategy=GenerationType.SEQUENCE, generator="EMP_SEQ")
+       @SequenceGenerator(name="EMP_SEQ", sequenceName="AGC_INVOICE_SEQ", allocationSize=100)
+       private long id;
+
+//The GenerationType.AUTO is the default generation type and lets the persistence provider choose the generation strategy.
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	@Column(name = "id", updatable = false, nullable = false)
+	private Long id;
+
+// It relies on an auto-incremented database column and lets the database generate a new value with each insert operation. 
+
+@Id
+@GeneratedValue(strategy = GenerationType.IDENTITY)
+@Column(name = "id", updatable = false, nullable = false)
+private Long id;
+
+************************************************************************************************************
+	
+//relacion uno a uno
+	
+	@OneToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "ID_DEPARTAMENTO", nullable = false)
+	public Department getDepartment() {
+		return department;
+	}
+	
+************************************************************************************************************
+
+
+// relacion uno a muchos
+	
+	---> op1
+	@OneToMany(targetEntity = Cost.class, fetch = FetchType.LAZY, mappedBy = "contract", cascade = CascadeType.ALL)
+	public List<Cost> getCostList() {
+		return costList;
+	}	
+	
+	---> op2
+	@OneToMany(mappedBy="experto",cascade=CascadeType.PERSIST)
+    private List<Imparticion> imparticiones= new ArrayList<Imparticion>();
+		
+		
+	---> Bidirectional		
+	@Entity
+	public class Troop {
+    @OneToMany(mappedBy="troop")
+    public Set<Soldier> getSoldiers() {
+    ...
+	}
+
+	@Entity
+	public class Soldier {
+    @ManyToOne
+    @JoinColumn(name="troop_fk")
+    public Troop getTroop() {
+    ...
+	}    
+
+
+	---> Unidirectional
+	@Entity
+	public class Customer implements Serializable {
+    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER)
+    @JoinColumn(name="CUST_ID")
+    public Set<Ticket> getTickets() {
+    ...
+	}
+
+	@Entity
+	public class Ticket implements Serializable {
+    ... //no bidir
+	} 
+	
+	---> Defaults	
+	@Entity
+	public class Trainer {
+		@OneToMany
+		public Set<Tiger> getTrainedTigers() {
+		...
+	}
+
+	@Entity
+	public class Tiger {
+		... //no bidir
+	}
+	
+
+************************************************************************************************************
+
+// relacion muchos a uno
+	
+	public class User{
+		@OneToMany(mappedBy="user", fetch=FetchType.LAZY, cascade = CascadeType.ALL)
+		private List<Post> posts;
+	}
+
+	public class Post {
+		@ManyToOne(fetch=FetchType.LAZY)
+		@JoinColumn(name="user_id")
+		private User user;
+	}
+
+************************************************************************************************************
+
+
+
+
+	
+	
+

@@ -1,0 +1,76 @@
+
+mvn [options] [<goal(s)>] [<phase(s)>]
+
+//crear un archetype
+mvn archetype:create -DgroupId=tellurium -DartifactId=tellurium-junit-archetype -DarchetypeArtifactId=maven-archetype-archetype
+mvn archetype:generate -DgroupId=jmapp   -DartifactId=jmapp-art   -DarchetypeArtifactId=maven-archetype-archetype  
+mvn archetype:generate -DarchetypeGroupId=jmapp   -DarchetypeArtifactId=jmapp-art   -DarchetypeVersion=1.0   -DgroupId=my.groupid   -DartifactId=my-artifactId  
+mvn archetype:create -DarchetypeGroupId=jmapp   -DarchetypeArtifactId=jmapp-art   -DarchetypeVersion=1.0   -DgroupId=my.groupid   -DartifactId=my-artifactId
+468: remote -> ml.rugal.archetype:springmvc-spring-hibernate (A pretty useful JavaEE application archetype based on springmvc spring and hibernate)
+
+
+********************************************************************************************************
+
+//crear proyecto 
+mvn archetype:generate
+  -DgroupId=[your project's group id]
+  -DartifactId=[your project's artifact id]
+  -DarchetypeArtifactId=maven-archetype-archetype
+
+
+$ mvn archetype:generate -DgroupId=com.mkyong.web -DartifactId=ProjectName
+	-DarchetypeArtifactId=maven-archetype-webapp -DinteractiveMode=false
+	
+//In terminal, navigate to ProjectName folder, type this command :
+mvn eclipse:eclipse -Dwtpversion=2.0
+
+mvn tomcat:run
+
+mvn jetty:run
+
+********************************************************************************************************
+
+//ejemplo instalacion libreria
+
+mvn install:install-file -DgroupId=com.jaspersoft.jasperserver.api.common -DartifactId=jasperserver-api-common 
+-Dversion=6.1.0 -Dpackaging=jar -Dfile=C:\Jaspersoft\jasperreports-server-6.1.0\apache-tomcat\webapps\jasperserver-pro\WEB-INF\lib\jasperserver-api-common-6.1.0.jar
+
+
+<dependency>
+	<groupId>com.jaspersoft.jasperserver.api.common</groupId>
+	<artifactId>jasperserver-api-common</artifactId>
+	<version>6.1.0</version>
+</dependency>
+		
+
+********************************************************************************************************
+
+
+// activar un profile(settings.xml)
+
+mvn -Dtarget=des help:active-profiles
+
+
+
+********************************************************************************************************
+
+// ejecutar clase java desde linea de comandos
+
+mvn exec:java -Dexec.mainClass="com.app.HibersapTest"  
+
+mvn exec:java -Dexec.mainClass="com.vineetmanohar.module.Main" -Dexec.args="arg0 arg1 arg2"  
+
+
+********************************************************************************************************
+
+$ mvn install:install-file -Dfile={Path/to/your/ojdbc6.jar} -DgroupId=com.oracle -DartifactId=ojdbc6 -Dversion=11.2.0 -Dpackaging=jar
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,151 @@
+
+SET SERVEROUTPUT ON
+dbms_output.put_line('holasa');
+
+DECLARE
+  outParam1 VARCHAR2(100);
+BEGIN
+  ztest(1,outParam1);
+  DBMS_OUTPUT.PUT_LINE(outParam1);
+END;
+/
+
+
+******************************************************************************************
+
+
+CREATE [OR REPLACE] FUNCTION function_name
+   [ (parameter [,parameter]) ]
+
+   RETURN return_datatype
+
+IS | AS
+
+   [declaration_section]
+
+BEGIN
+   executable_section
+
+[EXCEPTION
+   exception_section]
+
+END [function_name];
+
+
+
+******************************************************************************************
+
+
+CREATE [OR REPLACE] PROCEDURE procedure_name
+    [ (parameter [,parameter]) ]
+
+IS
+    [declaration_section]
+
+BEGIN
+    executable_section
+
+[EXCEPTION
+    exception_section]
+
+END [procedure_name];
+
+
+
+******************************************************************************************
+
+EXCEPTION
+WHEN OTHERS THEN
+   raise_application_error(-20001,'An error was encountered - '||SQLCODE||' -ERROR- '||SQLERRM);
+
+
+
+EXCEPTION
+   WHEN exception_name1 THEN
+      [statements]
+
+   WHEN exception_name2 THEN
+      [statements]
+
+   WHEN exception_name_n THEN
+      [statements]
+
+   WHEN OTHERS THEN
+      [statements]
+
+
+
+
+//Syntax for Procedures
+CREATE [OR REPLACE] PROCEDURE procedure_name
+   [ (parameter [,parameter]) ]
+IS
+   [declaration_section]
+
+   exception_name EXCEPTION;
+
+BEGIN
+   executable_section
+   RAISE exception_name;
+
+EXCEPTION
+   WHEN exception_name THEN
+      [statements]
+
+   WHEN OTHERS THEN
+      [statements]
+
+END [procedure_name];
+
+
+
+
+//Syntax for Functions
+CREATE [OR REPLACE] FUNCTION function_name
+   [ (parameter [,parameter]) ]
+   RETURN return_datatype
+
+IS | AS
+   [declaration_section]
+
+   exception_name EXCEPTION;
+
+BEGIN
+   executable_section
+
+   RAISE exception_name;
+
+EXCEPTION
+   WHEN exception_name THEN
+      [statements]
+
+   WHEN OTHERS THEN
+      [statements]
+
+END [function_name];
+
+
+
+
+******************************************************************************************
+
+FOR Lcntr IN 1..20
+LOOP
+   LCalc := Lcntr * 31;
+END LOOP;
+
+
+LOOP
+   monthly_value := daily_value * 31;
+   EXIT WHEN monthly_value > 4000;
+END LOOP;
+
+
+WHILE monthly_value <= 4000
+LOOP
+   monthly_value := daily_value * 31;
+END LOOP;
+
+
+
+

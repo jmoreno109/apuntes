@@ -1,0 +1,3134 @@
+
+****************************
+CAP 1: Java Building Blocks
+****************************
+
++la clase debe tener el mismo nombre del archivo
++usualmente a la clase se le coloca 'public'
++solo puede haber una clase 'public' en el archivo
++el modificador 'public' no es obliglatorio
++el paquete java.lang es importado automaticamente
++cuando se hace import,el wildcards * solo busca clases 
++paquetes con java y javax vienen con el JDK
+
+■ Comments
+
+single-line comment:
+// comment until end of line
+
+Next comes the multiple-line comment:
+/* Multiple
+* line comment
+*/
+
+Finally, we have a Javadoc comment:
+/**
+* Javadoc multiple-line comment
+* @author Jeanne and Scott
+*/
+
+
+■ Writing a main() Method
+
+public static void main(String[] args)
+public static void main(String... args)
+public static final void main(String... args)
+public static final void main(String... args) throws Exception
+
+All command-line arguments are treated as String objects
+
+$ javac Zoo.java
+$ java Zoo Bronx Zoo
+
+$ javac Zoo.java
+$ java Zoo "San Diego" Zoo
+
+
+■ Redundant Imports
+
+java.lang is automatically considered to be imported
+
+1: import java.lang.System;
+2: import java.lang.*;
+3: import java.util.Random;
+4: import java.util.*;
+5: public class ImportExample {
+6: public static void main(String[] args) {
+7: Random r = new Random();
+8: System.out.println(r.nextInt(10));
+9: }
+10: }
+
+
+■ Naming Conflicts - Using Date Class
+
+// error
+import java.util.*;
+import java.sql.*;
+
+// error
+import java.util.Date;
+import java.sql.Date;
+
+// ok
+import java.util.Date; 
+import java.sql.*;
+
+
+■ Creating a New Package
+
+javac packagea/ClassA.java packageb/ClassB.java
+
+java packageb.ClassB
+
+
+■ Reading and Writing Object Fields
+
+It’s possible to read and write instance variables directly from the caller. In this example, a
+mother swan lays eggs:
+
+public class Swan {
+	int numberEggs;// instance variable
+	public static void main(String[] args) {
+	Swan mother = new Swan();
+	mother.numberEggs = 1; // set variable
+	System.out.println(mother.numberEggs); // read variable
+	}
+}
+
+■ Instance Initializer Blocks - Order of Initialization
+
++ Fields and instance initializer blocks are run in the order in which they appear in the file.
++ The constructor runs after all fields and instance initializer blocks have run.
+
+{ System.out.println(name); } // DOES NOT COMPILE
+private String name = "Fluffy";
+
+Let’s look at an example:
+
+1: public class Chick {
+2: 	private String name = "Fluffy";
+3: 	{ System.out.println("setting field"); }
+4: 	public Chick() {
+5: 		name = "Tiny";
+6: 		System.out.println("setting constructor");
+7: 	}
+8: public static void main(String[] args) {
+9: 	Chick chick = new Chick();
+10: System.out.println(chick.name); } }
+
+Running this example prints this:
+setting field
+setting constructor
+Tiny
+
+Let’s look at an example:
+
+public class Egg {
+	public Egg() {
+		number = 5;
+	}
+public static void main(String[] args) {
+	Egg egg = new Egg();
+	System.out.println(egg.number);
+}
+private int number = 3;
+{ number = 4; } }
+
+If you answered 5, you got it right
+
+
+
+■ Distinguishing Between Object References and Primitives
+
++ Primitive Types
+
+boolean true or false true
+byte 8-bit integral value 123
+short 16-bit integral value 123
+int 32-bit integral value 123
+long 64-bit integral value 123
+float 32-bit floating-point value 123.45f
+double 64-bit floating-point value 123.456
+char 16-bit Unicode value 'a'
+
+long max = 3123456789; // DOES NOT COMPILE
+long max = 3123456789L; // now Java knows it is a long
+
++ octal (digits 0–7), which uses the number 0 as a prefix—for example, 017
++ hexadecimal (digits 0–9 and letters A–F), which uses the number 0 followed by x or X
+as a prefix—for example, 0xFF
++ binary (digits 0–1), which uses the number 0 followed by b or B as a prefix—for example,
+0b10
+
+int million1 = 1000000;
+int million2 = 1_000_000;
+
+double notAtStart = _1000.00; // DOES NOT COMPILE
+double notAtEnd = 1000.00_; // DOES NOT COMPILE
+double notByDecimal = 1000_.00; // DOES NOT COMPILE
+double annoyingButLegal = 1_00_0.0_0; // OK
+
+
++ Reference Types
+
+int value = null; // DOES NOT COMPILE
+String s = null;
+
+String reference = "hello";
+int len = reference.length();
+int bad = len.length(); // DOES NOT COMPILE
+
+
+■ Declaring Multiple Variables
+
+String s1, s2;
+String s3 = "yes", s4 = "no";
+
+int i1, i2, i3 = 0;
+
+int num, String value; // DOES NOT COMPILE
+
+boolean b1, b2;
+String s1 = "1", s2;
+double d1, double d2; // error
+int i1; int i2;
+int i3; i4; // error
+
+
+■ Identifiers
+
+There are only three rules to remember for legal identifiers:
+
+1. The name must begin with a letter or the symbol $ or _.
+2. Subsequent characters may also be numbers.
+3. You cannot use the same name as a Java reserved word. As you might imagine, a
+reserved word is a keyword that Java has reserved so that you are not allowed to use it.
+Remember that Java is case sensitive, so you can use versions of the keywords that only
+differ in case. Please don’t, though.
+
+Prepare to be tested on these rules. The following examples are legal:
+
+okidentifier
+$OK2Identifier
+_alsoOK1d3ntifi3r
+__SStillOkbutKnotsonice$
+
+These examples are not legal:
+
+3DPointClass // identifiers cannot begin with a number
+hollywood@vine // @ is not a letter, digit, $ or _
+*$coffee // * is not a letter, digit, $ or _
+public // public is a reserved word
+
+
+■ Local Variables
+
+public void findAnswer(boolean check) {
+	int answer;
+	int onlyOneBranch;
+	if (check) {
+	onlyOneBranch = 1;
+	answer = 1;
+	} else {
+	answer = 2;
+	}
+System.out.println(answer);
+System.out.println(onlyOneBranch); // DOES NOT COMPILE
+}
+
+
+■ Instance and Class Variables - Default initialization value
+
+boolean false
+byte, short, int, long 0 (in the type’s bit-length)
+float, double 0.0 (in the type’s bit-length)
+char '\u0000' (NUL)
+All object references (everything else) null
+
+
+■ Understanding Variable Scope
+
+16: public void eatIfHungry(boolean hungry) {
+17: 	if (hungry) {
+18: 	int bitesOfCheese = 1;
+19: 		{
+20: 			boolean teenyBit = true;
+21: 			System.out.println(bitesOfCheese);
+22: 		}
+23: 	}
+24: System.out.println(teenyBit); // DOES NOT COMPILE
+25: }
+
+Got all that? Let’s review the rules on scope:
+
+1. Local variables—in scope from declaration to end of block
+2. Instance variables—in scope from declaration until object garbage collected
+3. Class variables—in scope from declaration until program ends
+
+
+■ Ordering Elements in a Class
+
+Element                 Example              Required?   Where does it go?
+Package declaration     package abc;         No          First line in the file
+Import  statements      import java.util.*;  No          Immediately after the package
+Class   declaration     public class C       Yes         Immediately after the import
+Field   declarations    int value;           No          Anywhere inside a class
+Method  declarations    void method()        No          Anywhere inside a class
+
+
+
+■ Destroying Objects - Garbage Collection
+
+An object is no longer reachable when one of two situations occurs:
+
++ The object no longer has any references pointing to it.
++ All references to the object have gone out of scope.
+
+
+1: public class Scope {
+2: 	public static void main(String[] args) {
+3: 	String one, two;
+4: 	one = new String("a");
+5: 	two = new String("b");
+6: 	one = two;
+7: 	String three = one;
+8: 	one = null;
+9: } }
+
+
+finalize()
+
++ Java allows objects to implement a method called finalize() that might get called.
++ If the garbage collector doesn’t run, the method doesn’t get called. 
++ If the garbage collector fails to collect the object and tries to run it again later, 
+the method doesn’t get called a second time.
++ Remember, finalize() is only run when the object is eligible for garbage collection
+
+public class Finalizer {
+	protected void finalize() {
+		System.out.println("Calling finalize");
+	}
+	public static void main(String[] args) {
+		Finalizer f = new Finalizer();
+	} 
+}
+
+
+■ Summary
+
++ In this chapter, you saw that Java classes consist of members called fields and methods. An
+object is an instance of a Java class. There are three styles of comment: a single-line comment
+(//), a multiline comment (/* */), and a Javadoc comment (/** */).
+
++ Java begins program execution with a main() method. The most common signature for
+this method run from the command line is public static void main(String[] args).
+Arguments are passed in after the class name, as in java NameOfClass firstArgument.
+Arguments are indexed starting with 0.
+
++ Java code is organized into folders called packages. To reference classes in other packages,
+you use an import statement. A wildcard ending an import statement means you want
+to import all classes in that package. It does not include packages that are inside that one.
+java.lang is a special package that does not need to be imported.
+
++ Constructors create Java objects. A constructor is a method matching the class name and
+omitting the return type. When an object is instantiated, fields and blocks of code are
+initialized first. Then the constructor is run.
+
++ Primitive types are the basic building blocks of Java types. They are assembled into
+reference types. Reference types can have methods and be assigned to null. In addition to
+“normal” numbers, numeric literals are allowed to begin with 0 (octal), 0x (hex), 0X (hex),
+0b (binary), or 0B (binary). Numeric literals are also allowed to contain underscores as long
+as they are directly between two other numbers.
+
++ Declaring a variable involves stating the data type and giving the variable a name.
+Variables that represent fi elds in a class are automatically initialized to their corresponding
+“zero” or null value during object instantiation. Local variables must be specifi cally
+initialized. Identifi ers may contain letters, numbers, $, or _. Identifiers may not begin with
+numbers.
+
++ Scope refers to that portion of code where a variable can be accessed. There are three
+kinds of variables in Java, depending on their scope: instance variables, class variables, and
+local variables. Instance variables are the nonstatic fi elds of your class. Class variables are
+the static fi elds within a class. Local variables are declared within a method.
+
++ For some class elements, order matters within the fi le. The package statement comes fi rst
+if present. Then comes the import statements if present. Then comes the class declaration.
+Fields and methods are allowed to be in any order within the class.
+
++ Garbage collection is responsible for removing objects from memory when they can
+never be used again. An object becomes eligible for garbage collection when there are no
+more references to it or its references have all gone out of scope. The finalize() method
+will run once for each object if/when it is fi rst garbage collected.
+Java code is object oriented, meaning all code is defi ned in classes. Access modifi ers
+allow classes to encapsulate data. Java is platform independent, compiling to bytecode. It is
+robust and simple by not providing pointers or operator overloading. Finally, Java is secure
+because it runs inside a virtual machine.
+
+
+*******************************
+CAP 2: Operators and Statements
+*******************************
+
+
+■ Understanding Java Operators - Order of operator precedence
+
+Operator                              Symbols and examples
+
+Post-unary operators                  expression++, expression--
+Pre-unary operators                   ++expression, --expression
+Other unary operators                 +, -, !
+Multiplication/Division/Modulus       *, /, %
+Addition/Subtraction                  +, -
+Shift operators                       <<, >>, >>>
+Relational operators                  <, >, <=, >=, instanceof
+Equal to/not equal to                 ==, !=
+Logical operators                     &, ^, |
+Short-circuit logical operators       &&, ||
+Ternary operators                     boolean expression ? expression1 : expression2
+Assignment operators                  =, +=, -=, *=, /=, %=, &=, ^=, !=, <<=, >>=, >>>=
+
+
+
+■ Numeric Promotion - Primitive
+
+Numeric Promotion Rules:
+
++ If two values have different data types, Java will automatically promote one of the values
+to the larger of the two data types.
+
++ If one of the values is integral and the other is floating-point, Java will automatically
+promote the integral value to the floating-point value’s data type.
+
++ Smaller data types, namely byte, short, and char, are first promoted to int any time
+they’re used with a Java binary arithmetic operator, even if neither of the operands is int.
+
++ After all promotion has occurred and the operands have the same data type, the resulting
+value will have the same data type as its promoted operands.
+
+
+■ Working with Unary Operators
+
+
+Unary operator            Description
++                         Indicates a number is positive, although numbers are assumed
+                          to be positive in Java unless accompanied by a negative unary
+                          operator
+-                         Indicates a literal number is negative or negates an expression
+++                        Increments a value by 1
+--                        Decrements a value by 1
+!                         Inverts a Boolean’s logical value
+
+
+■ Increment and Decrement Operators
+
+int counter = 0;
+System.out.println(counter); // Outputs 0
+System.out.println(++counter); // Outputs 1
+System.out.println(counter); // Outputs 1
+System.out.println(counter--); // Outputs 1
+System.out.println(counter); // Outputs 0
+
+int x = 3;
+int y = ++x * 5 / x-- + --x;
+System.out.println("x is " + x);
+System.out.println("y is " + y);
+The result is then printed:
+x is 2
+y is 7
+
+
+■ Assignment Operators
+
+int x = 1.0; // DOES NOT COMPILE
+short y = 1921222; // DOES NOT COMPILE
+int z = 9f; // DOES NOT COMPILE
+long t = 192301398193810323; // DOES NOT COMPILE
+
+■ Casting Primitive Values
+
+int x = (int)1.0;
+short y = (short)1921222; // Stored as 20678
+int z = (int)9l;
+long t = 192301398193810323L;
+
+short x = 10;
+short y = 3;
+short z = x * y; // DOES NOT COMPILE
+
+short x = 10;
+short y = 3;
+short z = (short)(x * y);
+
+
+■ Compound Assignment Operators
+
+Compound operators are useful for more than just shorthand—they can also save us
+from having to explicitly cast a value.
+
+int x = 2, z = 3;
+x = x * z; // Simple assignment operator
+x *= z; // Compound assignment operator
+
+long x = 10;
+int y = 5;
+y = y * x; // DOES NOT COMPILE
+
+long x = 10;
+int y = 5;
+y *= x; // OK
+
+long x = 5;
+long y = (x=3);
+System.out.println(x); // Outputs 3
+System.out.println(y); // Also, outputs
+
+
+■ Relational Operators
+
+int x = 10, y = 20, z = 10;
+System.out.println(x < y); // Outputs true
+System.out.println(x <= y); // Outputs true
+System.out.println(x >= z); // Outputs true
+System.out.println(x > z); // Outputs false
+
+a instanceof b 		True if the reference that a points to is an instance of
+					a class, subclass, or class that implements a particular
+					interface, as named in b
+					
+					
+■ Logical Operators
+
+Here are some tips to help remember this table:
++ AND is only true if both operands are true.
++ Inclusive OR is only false if both operands are false.
++ Exclusive OR is only true if the operands are different.
+
+
+boolean x = true || (y < 4);
+
+if(x != null && x.getValue() < 5) {
+// Do something
+}
+
+if(x != null & x.getValue() < 5) { // Throws an exception if x is null
+// Do something
+}
+
+int x = 6;
+boolean y = (x >= 6) || (++x <= 7);
+System.out.println(x);
+
+
+■ Equality Operators
+
+The equality operators are used in one of three scenarios:
+
+The comparisons for equality are limited to these three cases, so you cannot mix and match types.
+
++ Comparing two numeric primitive types. If the numeric values are of different data
+types, the values are automatically promoted as previously described. For example,
+5 == 5.00 returns true since the left side is promoted to a double.
+
++ Comparing two boolean values.
+
++ Comparing two objects, including null and String values.
+
+
+boolean x = true == 3; // DOES NOT COMPILE
+boolean y = false != "Giraffe"; // DOES NOT COMPILE
+boolean z = 3 == "Kangaroo"; // DOES NOT COMPILE
+
+boolean y = false;
+boolean x = (y = true);
+System.out.println(x); // Outputs true
+
+File x = new File("myFile.txt");
+File y = new File("myFile.txt");
+File z = x;
+System.out.println(x == y); // Outputs false
+System.out.println(x == z); // Outputs true
+
+
+■ The if-then Statement
+
+if(hourOfDay < 11)
+System.out.println("Good Morning");
+
+if(hourOfDay < 11)
+System.out.println("Good Morning");
+morningGreetingCount++;
+
+
+■ The if-then-else Statement
+
+if(hourOfDay < 11) {
+System.out.println("Good Morning");
+} else if(hourOfDay < 15) {
+System.out.println("Good Afternoon");
+} else {
+System.out.println("Good Evening");
+}
+
+
+■ Ternary Operator
+
+int y = 10;
+int x = (y > 5) ? (2 * y) : (3 * y);
+
+System.out.println((y > 5) ? 21 : "Zebra");
+int animal = (y < 91) ? 9 : "Horse"; // DOES NOT COMPILE
+
+int y = 1;
+int z = 1;
+final int x = y<10 ? y++ : z++;
+System.out.println(y+","+z); // Outputs 2,1
+
+int y = 1;
+int z = 1;
+final int x = y>=10 ? y++ : z++;
+System.out.println(y+","+z); // Outputs 1,2
+
+
+■ The switch Statement
+
+
+Data types supported by switch statements include the following:
+
++ int and Integer
++ byte and Byte
++ short and Short
++ char and Character
++ int and Integer
++ String
++ enum values
+
+
+This means you can use only literals, enum constants, or final constant variables of the same data type. 
+By final constant, we mean that the variable must be marked with the final modifier 
+and initialized with a literal value in the same expression in which it is declared.
+
+private int getSortOrder(String firstName, final String lastName) {
+String middleName = "Patricia";
+final String suffix = "JR";
+int id = 0;
+	switch(firstName) {
+	case "Test":
+		return 52;
+	case middleName: // DOES NOT COMPILE
+		id = 5;
+		break;
+	case suffix:
+		id = 0;
+		break;
+	case lastName: // DOES NOT COMPILE
+		id = 8;
+		break;
+	case 5: // DOES NOT COMPILE
+		id = 7;
+		break;
+	case 'J': // DOES NOT COMPILE
+		id = 10;
+		break;
+	case java.time.DayOfWeek.SUNDAY: // DOES NOT COMPILE
+		id=15;
+		break;
+	}
+return id;
+}
+
+
+■ The while Statement
+
+int roomInBelly = 5;
+public void eatCheese(int bitesOfCheese) {
+	while (bitesOfCheese > 0 && roomInBelly > 0) {
+		bitesOfCheese--;
+		roomInBelly--;
+	}
+	System.out.println(bitesOfCheese+" pieces of cheese left");
+}
+
+int x = 2;
+int y = 5;
+while(x < 10)
+y++;
+
+it will never end!
+
+
+■ The do-while Statement
+
+int x = 0;
+do {
+x++;
+} while(false);
+System.out.println(x); // Outputs 1
+
+
+■ The for Statement
+
++ Creating an Infinite Loop:
+
+for( ; ; ) {
+System.out.println("Hello World");
+}
+
++ Adding Multiple Terms to the for Statement:
+
+int x = 0;
+for(long y = 0, z = 4; x < 5 && y < 10; x++, y++) {
+	System.out.print(y + " ");
+}
+System.out.print(x);
+
++ Redeclaring a Variable in the Initialization Block:
+
+int x = 0;
+for(long y = 0, x = 4; x < 5 && y < 10; x++, y++) { // DOES NOT COMPILE
+	System.out.print(x + " ");
+}
+
+int x = 0;
+long y = 10;
+for(y = 0, x = 4; x < 5 && y < 10; x++, y++) {
+	System.out.print(x + " ");
+}
+
++ Using Incompatible Data Types in the Initialization Block:
+
+for(long y = 0, int x = 4; x < 5 && y<10; x++, y++) { // DOES NOT COMPILE
+	System.out.print(x + " ");
+}
+
++ Using Loop Variables Outside the Loop:
+
+for(long y = 0, x = 4; x < 5 && y < 10; x++, y++) {
+	System.out.print(y + " ");
+}
+System.out.print(x); // DOES NOT COMPILE
+
+
+
+■ The for-each Statement
+
+String names = "Lisa";
+for(String name : names) { // DOES NOT COMPILE
+	System.out.print(name + " ");
+}
+
+String[] names = new String[3];
+for(int name : names) { // DOES NOT COMPILE
+	System.out.print(name + " ");
+}
+
+
+■ Nested Loops
+
+int[][] myComplexArray = {{5,2,1,3},{3,9,8,9},{5,7,12,7}};
+for(int[] mySimpleArray : myComplexArray) {
+	for(int i=0; i<mySimpleArray.length; i++) {
+		System.out.print(mySimpleArray[i]+"\t");
+	}
+System.out.println();
+}
+
+
+■ Adding Optional Labels
+
+int[][] myComplexArray = {{5,2,1,3},{3,9,8,9},{5,7,12,7}};
+OUTER_LOOP: for(int[] mySimpleArray : myComplexArray) {
+	INNER_LOOP: for(int i=0; i<mySimpleArray.length; i++) {
+		System.out.print(mySimpleArray[i]+"\t");
+	}
+System.out.println();
+}
+
+
+■ The break Statement
+
+public static void main(String[] args) {
+int[][] list = {{1,13,5},{1,2,5},{2,7,2}};
+int searchValue = 2;
+int positionX = -1;
+int positionY = -1;
+PARENT_LOOP: for(int i=0; i<list.length; i++) {
+	for(int j=0; j<list[i].length; j++) {
+		if(list[i][j]==searchValue) {
+			positionX = i;
+			positionY = j;
+			break PARENT_LOOP;
+		}
+	}
+}
+
+
+■ the continue Statement
+
+public class SwitchSample {
+	public static void main(String[] args) {
+		FIRST_CHAR_LOOP: for (int a = 1; a <= 4; a++) {
+			for (char x = 'a'; x <= 'c'; x++) {
+				if (a == 2 || x == 'b')
+					continue FIRST_CHAR_LOOP;
+				System.out.print(" " + a + x);
+			}
+		}
+	}
+}
+
+        Allows optional labels     Allows break statement     Allows continue statement
+if      Yes                        No                         No
+while   Yes                        Yes                        Yes
+dowhile Yes                        Yes                        Yes
+for     Yes                        Yes                        Yes
+switch  Yes                        Yes                        No
+
+
+
+■ Summary
+
++ This chapter covered a wide variety of topics, including dozens of Java operators, along
+with numerous control fl ow statements. Many of these operators and statements may have
+been new to you.
+
++ It is important that you understand how to use all of the required Java operators covered
+in this chapter and know how operator precedence influences the way a particular expression
+is interpreted. There will likely be numerous questions on the exam that appear to test
+one thing, such as StringBuilder or exception handling, when in fact the answer is related
+to the misuse of a particular operator that causes the application to fail to compile. When
+you see an operator on the exam, always check that the appropriate data types are used and
+that they match each other where applicable.
+
++ For statements, this chapter covered two types of control structures: decision-making
+controls structures, including if-then, if-then-else, and switch statements, as well as
+repetition control structures including for, for-each, while, and do-while. Remember that
+most of these structures require the evaluation of a particular boolean expression either for
+branching decisions or once per repetition. The switch statement is the only one that supports
+a variety of data types, including String variables as of Java 7.
+
++ With a for-each statement you don’t need to explicitly write a boolean expression, since
+the compiler builds them implicitly. For clarity, we referred to an enhanced for loop as a
+for-each loop, but syntactically they are written as a for statement.
+
++ We concluded this chapter by discussing advanced control options and how flow can be
+enhanced through nested loops, break statements, and continue statements. Be wary of
+questions on the exam that use nested statements, especially ones with labels, and verify
+they are being used correctly.
+
++ This chapter is especially important because at least one component of this chapter will
+likely appear in every exam question with sample code. Many of the questions on the exam
+focus on proper syntactic use of the structures, as they will be a large source of questions
+that end in “Does not compile.” You should be able to answer all of the review questions
+correctly or fully understand those that you answered incorrectly before moving on to later
+chapters.
+
+
+
+*********************
+CAP 3: Core Java APIs
+*********************
+
+■ Creating and Manipulating Strings
+
+In Java, these two
+snippets both create a String:
+String name = "Fluffy";
+String name = new String("Fluffy");
+
+
+■ Concatenation
+
+There aren’t a lot of rules to know for this, but you have to know them well:
+
+1. If both operands are numeric, + means numeric addition.
+2. If either operand is a String, + means concatenation.
+3. The expression is evaluated left to right.
+
+Now let’s look at some examples:
+System.out.println(1 + 2); // 3
+System.out.println("a" + "b"); // ab
+System.out.println("a" + "b" + 3); // ab3
+System.out.println(1 + 2 + "c"); // 3c
+
+int three = 3;
+String four = "4";
+System.out.println(1 + 2 + three + four);
+
+4: String s = "1"; // s currently holds "1"
+5: s += "2"; // s currently holds "12"
+6: s += 3; // s currently holds "123"
+7: System.out.println(s); // 123
+
+
+■ Immutability
+
+1. Immutable only has a getter.
+2. immutable classes in Java are final, and subclasses can’t add mutable behavior.
+
+class Mutable {
+	private String s;
+	public void setS(String newS){ s = newS; } // Setter makes it mutable
+	public String getS() { return s; }
+}
+final class Immutable {
+	private String s = "name";
+	public String getS() { return s; }
+}
+
+
+■ The String Pool
+
+Since strings are everywhere in Java, they use up a lot of memory. In some production applications,
+they can use up 25–40 percent of the memory in the entire program. Java realizes
+that many strings repeat in the program and solves this issue by reusing common ones. The
+string pool, also known as the intern pool, is a location in the Java virtual machine (JVM)
+that collects all these strings.
+
+
+Important String Methods:
+
+■ length()
+
+The method signature
+is as follows:
+int length()
+The following code shows how to use length():
+String string = "animals";
+System.out.println(string.length()); // 7
+
+
+■ charAt()
+The method charAt() lets you query the string to find out what character is at a specifi c
+index. The method signature is as follows:
+char charAt(int index)
+The following code shows how to use charAt():
+String string = "animals";
+System.out.println(string.charAt(0)); // a
+System.out.println(string.charAt(6)); // s
+System.out.println(string.charAt(7)); // throws exception
+
+
+■ indexOf()
+
+int indexOf(char ch)
+int indexOf(char ch, index fromIndex)
+int indexOf(String str)
+int indexOf(String str, index fromIndex)
+The following code shows how to use indexOf():
+String string = "animals";
+System.out.println(string.indexOf('a')); // 0
+System.out.println(string.indexOf("al")); // 4
+System.out.println(string.indexOf('a', 4)); // 4
+System.out.println(string.indexOf("al", 5)); // -1
+
+
+■ substring()
+
+int substring(int beginIndex)
+int substring(int beginIndex, int endIndex)
+
+String string = "animals";
+System.out.println(string.substring(3)); // mals
+System.out.println(string.substring(string.indexOf('m'))); // mals
+System.out.println(string.substring(3, 4)); // m
+System.out.println(string.substring(3, 7)); // mals
+
+The next examples are less obvious:
+System.out.println(string.substring(3, 3)); // empty string
+System.out.println(string.substring(3, 2)); // throws exception
+System.out.println(string.substring(3, 8)); // throws exception
+
+
+■ toLowerCase() and toUpperCase()
+
+String toLowerCase(String str)
+String toUpperCase(String str)
+
+String string = "animals";
+System.out.println(string.toUpperCase()); // ANIMALS
+System.out.println("Abc123".toLowerCase()); // abc123
+
+
+■ equals() and equalsIgnoreCase()
+
+boolean equals(String str)
+boolean equalsIgnoreCase(String str)
+
+System.out.println("abc".equals("ABC")); // false
+System.out.println("ABC".equals("ABC")); // true
+System.out.println("abc".equalsIgnoreCase("ABC")); // true
+
+
+■ startsWith() and endsWith()
+
+boolean startsWith(String prefix)
+boolean endsWith(String suffix)
+
+System.out.println("abc".startsWith("a")); // true
+System.out.println("abc".startsWith("A")); // false
+System.out.println("abc".endsWith("c")); // true
+System.out.println("abc".endsWith("a")); // false
+
+
+■ contains()
+
+boolean contains(String str)
+
+System.out.println("abc".contains("b")); // true
+System.out.println("abc".contains("B")); // false
+
+
+■ replace()
+
+String replace(char oldChar, char newChar)
+String replace(CharSequence oldChar, CharSequence newChar)
+
+System.out.println("abcabc".replace('a', 'A')); // AbcAbc
+System.out.println("abcabc".replace("a", "A")); // AbcAbc
+
+
+■ trim()
+
+public String trim()
+
+System.out.println("abc".trim()); // abc
+System.out.println("\t a b c\n".trim()); // a b c
+
+
+■ Method Chaining
+
+String start = "AniMaL ";
+String trimmed = start.trim(); // "AniMaL"
+String lowercase = trimmed.toLowerCase(); // "animal"
+String result = lowercase.replace('a', 'A'); // "Animal"
+System.out.println(result);
+
+String result = "AniMaL ".trim().toLowerCase().replace('a', 'A');
+System.out.println(result);
+
+5: String a = "abc";
+6: String b = a.toUpperCase();
+7: b = b.replace("B", "2").replace('C', '3');
+8: System.out.println("a=" + a);
+9: System.out.println("b=" + b);
+
+
+■ Using the StringBuilder Class
+
+10: String alpha = "";
+11: for(char current = 'a'; current <= 'z'; current++)
+12: alpha += current;
+13: System.out.println(alpha);
+
+15: StringBuilder alpha = new StringBuilder();
+16: for(char current = 'a'; current <= 'z'; current++)
+17: alpha.append(current);
+18: System.out.println(alpha);
+
+
+■ Mutability and Chaining
+
+4: StringBuilder sb = new StringBuilder("start");
+5: sb.append("+middle"); // sb = "start+middle"
+6: StringBuilder same = sb.append("+end"); // "start+middle+end"
+
+4: StringBuilder a = new StringBuilder("abc");
+5: StringBuilder b = a.append("de");
+6: b = b.append("f").append("g");
+7: System.out.println("a=" + a);
+8: System.out.println("b=" + b);
+
+
+■  Creating a StringBuilder
+
+StringBuilder sb1 = new StringBuilder();
+StringBuilder sb2 = new StringBuilder("animal");
+StringBuilder sb3 = new StringBuilder(10);
+
+
+■ charAt(), indexOf(), length(), and substring() - StringBuilder
+
+These four methods work exactly the same as in the String class. Be sure you can identify
+the output of this example:
+
+StringBuilder sb = new StringBuilder("animals");
+String sub = sb.substring(sb.indexOf("a"), sb.indexOf("al"));
+int len = sb.length();
+char ch = sb.charAt(6);
+System.out.println(sub + " " + len + " " + ch);
+
+
+■ append()
+
+StringBuilder append(String str)
+
+StringBuilder sb = new StringBuilder().append(1).append('c');
+sb.append("-").append(true);
+System.out.println(sb); // 1c-true
+
+
+■ insert()
+
+StringBuilder insert(int offset, String str)
+
+3: StringBuilder sb = new StringBuilder("animals");
+4: sb.insert(7, "-"); // sb = animals-
+5: sb.insert(0, "-"); // sb = -animals-
+6: sb.insert(4, "-"); // sb = -ani-mals
+7: System.out.println(sb);
+
+
+■ delete() and deleteCharAt()
+
+StringBuilder delete(int start, int end)
+StringBuilder deleteCharAt(int index)
+
+StringBuilder sb = new StringBuilder("abcdef");
+sb.delete(1, 3); // sb = adef
+sb.deleteCharAt(5); // throws an exception
+
+
+■ reverse()
+
+StringBuilder reverse()
+
+StringBuilder sb = new StringBuilder("ABC");
+sb.reverse();
+System.out.println(sb);
+
+
+■ toString()
+
+String toString()
+
+String s = sb.toString();
+
+
+■ StringBuilder vs. StringBuffer
+
+StringBuffer does the same thing but more slowly because it is thread safe. 
+You’ll learn about threads for the OCP exam. In theory, you don’t need 
+to know about StringBuffer on the exam at all. However, we bring
+this up anyway, since an older question might still be left on the exam.
+
+
+■ Understanding Equality
+
+StringBuilder one = new StringBuilder();
+StringBuilder two = new StringBuilder();
+StringBuilder three = one.append("a");
+System.out.println(one == two); // false
+System.out.println(one == three); // true
+
+String x = "Hello World";
+String y = "Hello World";
+System.out.println(x == y); // true
+
+String x = "Hello World";
+String z = " Hello World".trim();
+System.out.println(x == z); // false
+
+String x = new String("Hello World");
+String y = "Hello World";
+System.out.println(x == y); // false
+
+String x = "Hello World";
+String z = " Hello World".trim();
+System.out.println(x.equals(z)); // true
+
+
+1: public class Tiger {
+2: String name;
+3: public static void main(String[] args) {
+4: 	Tiger t1 = new Tiger();
+5: 	Tiger t2 = new Tiger();
+6: 	Tiger t3 = t1;
+7: 	System.out.println(t1 == t1); // true
+8: 	System.out.println(t1 == t2); // false
+9: 	System.out.println(t1.equals(t2)); // false
+10: } }
+
+
+■ Understanding Java Arrays
+
+int[] numbers1 = new int[3];
+int[] numbers2 = new int[] {42, 55, 99};
+int[] numbers2 = {42, 55, 99};
+
+int[] numAnimals;
+int [] numAnimals2;
+int numAnimals3[];
+int numAnimals4 [];
+
+What types of reference variables do you think the following code creates?
+int[] ids, types;
+The correct answer is two variables of type int[]. This seems logical enough. After all,
+int a, b; created two int variables. 
+
+What about this example?
+int ids[], types;
+
+
+■ Creating an Array with Reference Variables
+
+public class ArrayType {
+public static void main(String args[]) {
+String [] bugs = { "cricket", "beetle", "ladybug" };
+String [] alias = bugs;
+System.out.println(bugs.equals(alias)); // true
+System.out.println(bugs.toString()); // [Ljava.lang.String;@160bc7c0
+} }
+
+3: String[] strings = { "stringValue" };
+4: Object[] objects = strings;
+5: String[] againStrings = (String[]) objects;
+6: againStrings[0] = new StringBuilder(); // DOES NOT COMPILE
+7: objects[0] = new StringBuilder(); // careful!
+
+
+■ Using an Array
+
+4: String[] mammals = {"monkey", "chimp", "donkey"};
+5: System.out.println(mammals.length); // 3
+6: System.out.println(mammals[0]); // monkey
+7: System.out.println(mammals[1]); // chimp
+8: System.out.println(mammals[2]); // donkey
+
+String[] birds = new String[6];
+System.out.println(birds.length);
+
+The answer is 6. Even though all 6 elements of the array are null, there are still 6 of them.
+
+5: int[] numbers = new int[10];
+6: for (int i = 0; i < numbers.length; i++)
+7: numbers[i] = i + 5;
+
+
+■ Sorting
+
+import java.util.* // import whole package including Arrays
+import java.util.Arrays; // import just Arrays
+
+int[] numbers = { 6, 9, 1 };
+Arrays.sort(numbers);
+for (int i = 0; i < numbers.length; i++)
+	System.out.print (numbers[i] + " ");
+
+String[] strings = { "10", "9", "100" };
+Arrays.sort(strings);
+for (String string : strings)
+	System.out.print(string + " ");
+	
+	
+■ Searching
+
+Unsorted array A surprise—this result isn’t predictable
+
+3: int[] numbers = {2,4,6,8};
+4: System.out.println(Arrays.binarySearch(numbers, 2)); // 0
+5: System.out.println(Arrays.binarySearch(numbers, 4)); // 1
+6: System.out.println(Arrays.binarySearch(numbers, 1)); // -1
+7: System.out.println(Arrays.binarySearch(numbers, 3)); // -2
+8: System.out.println(Arrays.binarySearch(numbers, 9)); // -5
+
+
+■ Varargs
+
+public static void main(String[] args)
+public static void main(String args[])
+public static void main(String... args) // varargs
+
+
+■ Creating a Multidimensional Array
+
+int[][] vars1; // 2D array
+int vars2 [][]; // 2D array
+int[] vars3[]; // 2D array
+int[] vars4 [], space [][]; // a 2D AND a 3D array
+
+String [][] rectangle = new String[3][2];
+rectangle[0][1] = "set";
+
+int[][] differentSize = {{1, 4}, {3}, {9,8,7}};
+
+int [][] args = new int[4][];
+args[0] = new int[5];
+args[1] = new int[3];
+
+
+■ Using a Multidimensional Array
+
+int[][] twoD = new int[3][2];
+for (int i = 0; i < twoD.length; i++) {
+	for (int j = 0; j < twoD[i].length; j++)
+		System.out.print(twoD[i][j] + " "); // print element
+	System.out.println(); // time for a new row
+}
+
+for (int[] inner : twoD) {
+	for (int num : inner)
+		System.out.print(num + " ");
+	System.out.println();
+}
+
+
+■ Understanding an ArrayList
+
+import java.util.* // import whole package including ArrayList
+import java.util.ArrayList; // import just ArrayList
+
+
+■ Creating an ArrayList
+
+ArrayList list1 = new ArrayList();
+ArrayList list2 = new ArrayList(10);
+ArrayList list3 = new ArrayList(list2);
+
+ArrayList<String> list4 = new ArrayList<String>();
+ArrayList<String> list5 = new ArrayList<>();
+
+List<String> list6 = new ArrayList<>();
+ArrayList<String> list7 = new List<>(); // DOES NOT COMPILE
+
+
+■ add()
+
+boolean add(E element)
+void add(int index, E element)
+
+ArrayList list = new ArrayList();
+list.add("hawk"); // [hawk]
+list.add(Boolean.TRUE); // [hawk, true]
+System.out.println(list); // [hawk, true]
+
+ArrayList<String> safer = new ArrayList<>();
+safer.add("sparrow");
+safer.add(Boolean.TRUE); // DOES NOT COMPILE
+
+4: List<String> birds = new ArrayList<>();
+5: birds.add("hawk"); // [hawk]
+6: birds.add(1, "robin"); // [hawk, robin]
+7: birds.add(0, "blue jay"); // [blue jay, hawk, robin]
+8: birds.add(1, "cardinal"); // [blue jay, cardinal, hawk, robin]
+9: System.out.println(birds); // [blue jay, cardinal, hawk, robin]
+
+
+■ remove()
+
+boolean remove(Object object)
+E remove(int index)
+
+3: List<String> birds = new ArrayList<>();
+4: birds.add("hawk"); // [hawk]
+5: birds.add("hawk"); // [hawk, hawk]
+6: System.out.println(birds.remove("cardinal")); // prints false
+7: System.out.println(birds.remove("hawk")); // prints true
+8: System.out.println(birds.remove(0)); // prints hawk
+9: System.out.println(birds); // []
+
+
+■ set()
+
+E set(int index, E newElement)
+
+15: List<String> birds = new ArrayList<>();
+16: birds.add("hawk"); // [hawk]
+17: System.out.println(birds.size()); // 1
+18: birds.set(0, "robin"); // [robin]
+19: System.out.println(birds.size()); // 1
+20: birds.set(1, "robin"); // IndexOutOfBoundsException
+
+
+■ isEmpty() and size()
+
+boolean isEmpty()
+int size()
+
+System.out.println(birds.isEmpty()); // true
+System.out.println(birds.size()); // 0
+birds.add("hawk"); // [hawk]
+birds.add("hawk"); // [hawk, hawk]
+
+System.out.println(birds.isEmpty()); // false
+System.out.println(birds.size()); // 2
+
+
+■ clear()
+
+void clear()
+
+List<String> birds = new ArrayList<>();
+birds.add("hawk"); // [hawk]
+birds.add("hawk"); // [hawk, hawk]
+System.out.println(birds.isEmpty()); // false
+System.out.println(birds.size()); // 2
+birds.clear(); // []
+System.out.println(birds.isEmpty()); // true
+System.out.println(birds.size()); // 0
+
+
+■ contains()
+
+boolean contains(Object object)
+
+List<String> birds = new ArrayList<>();
+birds.add("hawk"); // [hawk]
+System.out.println(birds.contains("hawk")); // true
+System.out.println(birds.contains("robin")); // false
+
+
+■ equals()
+
+boolean equals(Object object)
+
+The following shows an example:
+31: List<String> one = new ArrayList<>();
+32: List<String> two = new ArrayList<>();
+33: System.out.println(one.equals(two)); // true
+34: one.add("a"); // [a]
+35: System.out.println(one.equals(two)); // false
+36: two.add("a"); // [a]
+37: System.out.println(one.equals(two)); // true
+38: one.add("b"); // [a,b]
+39: two.add(0, "b"); // [b,a]
+40: System.out.println(one.equals(two)); // false
+
+
+■ Wrapper Classes
+
+Primitive type        Wrapper class      Example of constructing
+
+boolean               Boolean            new Boolean(true)
+byte                  Byte               new Byte((byte) 1)
+short                 Short              new Short((short) 1)
+int                   Integer            new Integer(1)
+long                  Long               new Long(1)
+float                 Float              new Float(1.0)
+double                Double             new Double(1.0)
+char                  Character          new Character('c')
+
+
+int primitive = Integer.parseInt("123");
+Integer wrapper = Integer.valueOf("123");
+
+int bad1 = Integer.parseInt("a"); // throws NumberFormatException
+Integer bad2 = Integer.valueOf("123.45"); // throws NumberFormatException
+
+
+Wrapper class          Converting String to primitive    Converting String to wrapper class
+
+Boolean                Boolean.parseBoolean("true");     Boolean.valueOf("TRUE");
+Byte                   Byte.parseByte("1");              Byte.valueOf("2");
+Short                  Short.parseShort("1");            Short.valueOf("2");
+Integer                Integer.parseInt("1");            Integer.valueOf("2");
+Long                   Long.parseLong("1");              Long.valueOf("2");
+Float                  Float.parseFloat("1");            Float.valueOf("2.2");
+Double                 Double.parseDouble("1");          Double.valueOf("2.2");
+Character              None None
+
+
+Autoboxing
+
+4: List<Double> weights = new ArrayList<>();
+5: weights.add(50.5); // [50.5]
+6: weights.add(new Double(60)); // [50.5, 60.0]
+7: weights.remove(50.5); // [60.0]
+8: double first = weights.get(0); // 60.0
+
+3: List<Integer> heights = new ArrayList<>();
+4: heights.add(null);
+5: int h = heights.get(0); // NullPointerException
+
+
+■ Converting Between array and List
+
+3: List<String> list = new ArrayList<>();
+4: list.add("hawk");
+5: list.add("robin");
+6: Object[] objectArray = list.toArray();
+7: System.out.println(objectArray.length); // 2
+8: String[] stringArray = list.toArray(new String[0]);
+9: System.out.println(stringArray.length); // 2
+
+20: String[] array = { "hawk", "robin" }; // [hawk, robin]
+21: List<String> list = Arrays.asList(array); // returns fixed size list
+22: System.out.println(list.size()); // 2
+23: list.set(1, "test"); // [hawk, test]
+24: array[0] = "new"; // [new, test]
+25: for (String b : array) System.out.print(b + " "); // new test
+26: list.remove(1); // throws UnsupportedOperation Exception
+
+List<String> list = Arrays.asList("one", "two");
+
+
+■ Sorting
+
+List<Integer> numbers = new ArrayList<>();
+numbers.add(99);
+numbers.add(5);
+numbers.add(81);
+Collections.sort(numbers);
+System.out.println(numbers); [5, 81, 99]
+
+
+■ Working with Dates and Times:
+
+LocalDate.now();
+LocalTime.now();
+LocalDateTime.now();
+
+public static LocalDate of(int year, int month, int dayOfMonth)
+public static LocalDate of(int year, Month month, int dayOfMonth)
+
+LocalDate date1 = LocalDate.of(2015, 1, 20);
+LocalDate date2 = LocalDate.of(2015, Month.JANUARY, 20);
+
+LocalTime time1 = LocalTime.of(6, 15); // hour and minute
+LocalTime time2 = LocalTime.of(6, 15, 30); // + seconds
+LocalTime time3 = LocalTime.of(6, 15, 30, 200); // + nanoseconds
+
+public static LocalTime of(int hour, int minute)
+public static LocalTime of(int hour, int minute, int second)
+public static LocalTime of(int hour, int minute, int second, int nanos)
+
+LocalDateTime dateTime1 = LocalDateTime.of(2015, Month.JANUARY, 20, 6, 15, 30);
+LocalDateTime dateTime2 = LocalDateTime.of(date1, time1);
+
+LocalDate d = new LocalDate(); // DOES NOT COMPILE
+LocalDate.of(2015, Month.JANUARY, 32) // throws DateTimeException
+
+
+
+■ Manipulating Dates and Times
+
+12: LocalDate date = LocalDate.of(2014, Month.JANUARY, 20);
+13: System.out.println(date); // 2014-01-20
+14: date = date.plusDays(2);
+15: System.out.println(date); // 2014-01-22
+16: date = date.plusWeeks(1);
+17: System.out.println(date); // 2014-01-29
+18: date = date.plusMonths(1);
+19: System.out.println(date); // 2014-02-28
+20: date = date.plusYears(5);
+21: System.out.println(date); // 2019-02-28
+
+22: LocalDate date = LocalDate.of(2020, Month.JANUARY, 20);
+23: LocalTime time = LocalTime.of(5, 15);
+24: LocalDateTime dateTime = LocalDateTime.of(date, time);
+25: System.out.println(dateTime); // 2020-01-20T05:15
+26: dateTime = dateTime.minusDays(1);
+27: System.out.println(dateTime); // 2020-01-19T05:15
+28: dateTime = dateTime.minusHours(10);
+29: System.out.println(dateTime); // 2020-01-18T19:15
+30: dateTime = dateTime.minusSeconds(30);
+31: System.out.println(dateTime); // 2020-01-18T19:14:30
+
+LocalDate date = LocalDate.of(2020, Month.JANUARY, 20);
+LocalTime time = LocalTime.of(5, 15);
+LocalDateTime dateTime = LocalDateTime.of(date2, time)
+.minusDays(1).minusHours(10).minusSeconds(30);
+
+LocalDate date = LocalDate.of(2020, Month.JANUARY, 20);
+date.plusDays(10);
+System.out.println(date);
+
+LocalDate date = LocalDate.of(2020, Month.JANUARY, 20);
+date = date.plusMinutes(1); // DOES NOT COMPILE
+
+
+■ Working with Periods
+
+Period annually = Period.ofYears(1); // every 1 year
+Period quarterly = Period.ofMonths(3); // every 3 months
+Period everyThreeWeeks = Period.ofWeeks(3); // every 3 weeks
+Period everyOtherDay = Period.ofDays(2); // every 2 days
+Period everyYearAndAWeek = Period.of(1, 0, 7); // every year and 7 days
+
+Period wrong = Period.ofYears(1).ofWeeks(1); // every week
+Period wrong = Period.ofYears(1);
+wrong = Period.ofWeeks(7);
+
+public static void main(String[] args) {
+	LocalDate start = LocalDate.of(2015, Month.JANUARY, 1);
+	LocalDate end = LocalDate.of(2015, Month.MARCH, 30);
+	Period period = Period.ofMonths(1); // create a period
+	performAnimalEnrichment(start, end, period);
+}
+private static void performAnimalEnrichment(LocalDate start, LocalDate end,Period period) { // uses the generic period
+	LocalDate upTo = start;
+	while (upTo.isBefore(end)) {
+	System.out.println("give new toy: " + upTo);
+	upTo = upTo.plus(period); // adds the period
+}}
+
+3: LocalDate date = LocalDate.of(2015, 1, 20);
+4: LocalTime time = LocalTime.of(6, 15);
+5: LocalDateTime dateTime = LocalDateTime.of(date, time);
+6: Period period = Period.ofMonths(1);
+7: System.out.println(date.plus(period)); // 2015-02-20
+8: System.out.println(dateTime.plus(period)); // 2015-02-20T06:15
+9: System.out.println(time.plus(period)); // UnsupportedTemporalTypeException
+
+
+■ Formatting Dates and Times
+
+LocalDate date = LocalDate.of(2020, Month.JANUARY, 20);
+System.out.println(date.getDayOfWeek()); // MONDAY
+System.out.println(date.getMonth()); // JANUARY
+System.out.println(date.getYear()); // 2020
+System.out.println(date.getDayOfYear()); // 20
+
+LocalDate date = LocalDate.of(2020, Month.JANUARY, 20);
+LocalTime time = LocalTime.of(11, 12, 34);
+LocalDateTime dateTime = LocalDateTime.of(date, time);System.out.println(date
+.format(DateTimeFormatter.ISO_LOCAL_DATE));
+System.out.println(time.format(DateTimeFormatter.ISO_LOCAL_TIME));
+System.out.println(dateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+
+DateTimeFormatter shortDateTime = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT);
+System.out.println(shortDateTime.format(dateTime)); // 1/20/20
+System.out.println(shortDateTime.format(date)); // 1/20/20
+System.out.println(
+shortDateTime.format(time)); // UnsupportedTemporalTypeException
+
+DateTimeFormatter shortDateTime = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT);
+System.out.println(dateTime.format(shortDateTime));
+System.out.println(date.format(shortDateTime));
+System.out.println(time.format(shortDateTime));
+
+LocalDate date = LocalDate.of(2020, Month.JANUARY, 20);
+LocalTime time = LocalTime.of(11, 12, 34);
+LocalDateTime dateTime = LocalDateTime.of(date, time);
+DateTimeFormatter shortF = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT);
+DateTimeFormatter mediumF = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM);
+System.out.println(shortF.format(dateTime)); // 1/20/20 11:12 AM
+System.out.println(mediumF.format(dateTime)); // Jan 20, 2020 11:12:34 AM
+
+DateTimeFormatter f = DateTimeFormatter.ofPattern("MMMM dd, yyyy, hh:mm");
+System.out.println(dateTime.format(f)); // January 20, 2020, 11:12
+
+MMMM M represents the month. The more Ms you have, the more verbose the Java output.
+For example, M outputs 1, MM outputs 01, MMM outputs Jan, and MMMM outputs January.
+dd d represents the date in the month. As with month, the more ds you have, the more
+verbose the Java output. dd means to include the leading zero for a single-digit month.
+, Use , if you want to output a comma (this also appears after the year).
+yyyy y represents the year. yy outputs a two-digit year and yyyy outputs a four-digit year.
+hh h represents the hour. Use hh to include the leading zero if you’re outputting a singledigit
+hour.
+: Use : if you want to output a colon.
+mm m represents the minute.
+
+4: DateTimeFormatter f = DateTimeFormatter.ofPattern("hh:mm");
+5: f.format(dateTime);
+6: f.format(date); // error
+7: f.format(time);
+
+
+■ Parsing Dates and Times
+
+DateTimeFormatter f = DateTimeFormatter.ofPattern("MM dd yyyy");
+LocalDate date = LocalDate.parse("01 02 2015", f);
+LocalTime time = LocalTime.parse("11:22");
+System.out.println(date); // 2015-01-02
+System.out.println(time); // 11:22
+
+
+■ Summary
+
++ In this chapter, you learned that Strings are immutable sequences of characters. The new
+operator is optional. The concatenation operator (+) creates a new String with the content
+of the fi rst String followed by the content of the second String. If either operand
+involved in the + expression is a String, concatenation is used; otherwise, addition is used.
+String literals are stored in the string pool. The String class has many methods. You need
+to know charAt(), concat(), endsWith(), equals(), equalsIgnoreCase(), indexOf(),
+length(), replace(), startsWith(), substring(), toLowerCase(), toUpperCase(), and
+trim().
+
++ StringBuilders are mutable sequences of characters. Most of the methods return a
+reference to the current object to allow method chaining. The StringBuilder class has
+many methods. You need to know append(), charAt(), delete(), deleteCharAt(),
+indexOf(), insert(), length(), reverse(), substring(), and toString(). StringBuffer
+is the same as StringBuilder except that it is thread safe.
+Calling == on String objects will check whether they point to the same object in the
+pool. Calling == on StringBuilder references will check whether they are pointing to the
+same StringBuilder object. Calling equals() on String objects will check whether the
+sequence of characters is the same. Calling equals() on StringBuilder objects will check
+whether they are pointing to the same object rather than looking at the values inside.
+
++ An array is a fi xed-size area of memory on the heap that has space for primitives or
+pointers to objects. You specify the size when creating it—for example, int[] a = new
+int[6];. Indexes begin with 0 and elements are referred to using a[0]. The Arrays.sort()
+method sorts an array. Arrays.binarySearch() searches a sorted array and returns the
+index of a match. If no match is found, it negates the position where the element would
+need to be inserted and subtracts 1. Methods that are passed varargs (…) can be used as
+if a normal array was passed in. In a multidimensional array, the second-level arrays and
+beyond can be different sizes.
+
++ An ArrayList can change size over its life. It can be stored in an ArrayList or List
+reference. Generics can specify the type that goes in the ArrayList. You need to know the
+methods add(), clear(), contains(), equals(), isEmpty(), remove(), set(), and size().
+Although an ArrayList is not allowed to contain primitives, Java will autobox parameters
+passed in to the proper wrapper type. Collections.sort() sorts an ArrayList.
+
++ A LocalDate contains just a date, a LocalTime contains just a time, and a LocalDateTime
+contains both a date and time. All three have private constructors and are created using
+LocalDate.now() or LocalDate.of() (or the equivalents for that class). Dates and times
+can be manipulated using plusXXX or minusXXX methods. The Period class represents a
+number of days, months, or years to add or subtract from a LocalDate or LocalDateTime.
+DateTimeFormatter is used to output dates and times in the desired format. The date and
+time classes are all immutable, which means the return value must be used.
+
+
+
+********************************
+CAP 4: Methods and Encapsulation
+********************************
+
+
+Parts of a basic method.
+
+public final void nap(int minutes) throws InterruptedException {}
+
+■ Access Modifiers
+Java offers four choices of access modifier:
+
+public        The method can be called from any class.
+private       The method can only be called from within the same class.
+protected     The method can only be called from classes in the same package or subclasses.
+Default       (Package Private) Access The method can only be called from classes in the same
+              package. This one is tricky because there is no keyword for default access. You simply omit
+			  
+			  
+■ Optional Specifiers
+
+static        Covered later in this chapter. Used for class methods.
+abstract      Covered in Chapter 5. Used when not providing a method body.
+final         Covered in Chapter 5. Used when a method is not allowed to be overridden by a subclass.
+synchronized  On the OCP but not the OCA exam.
+native        Not on the OCA or OCP exam. Used when interacting with code written in another language such as C++.
+strictfp      Not on the OCA or OCP exam. Used for making fl oating-point calculations portable.
+
+Again, just focus on syntax for now. Do you see why these compile or don’t compile?
+public void walk1() {}
+public final void walk2() {}
+public static final void walk3() {}
+public final static void walk4() {}
+public modifier void walk5() {} // DOES NOT COMPILE
+public void final walk6() {} // DOES NOT COMPILE
+final public void walk7() {}
+
+
+■ Return Type
+
+public void walk1() { }
+public void walk2() { return; }
+public String walk3() { return ""; }
+public String walk4() { } // DOES NOT COMPILE
+public walk5() { } // DOES NOT COMPILE
+String walk6(int a) { if (a == 4) return ""; } // DOES NOT COMPILE
+
+
+■ Method Name
+
+public void walk1() { }
+public void 2walk() { } // DOES NOT COMPILE
+public walk3 void() { } // DOES NOT COMPILE
+public void Walk_$() { }
+public void() { } // DOES NOT COMPILE
+
+
+■ Parameter List
+
+public void walk1() { }
+public void walk2 { } // DOES NOT COMPILE
+public void walk3(int a) { }
+public void walk4(int a; int b) { } // DOES NOT COMPILE
+public void walk5(int a, int b) { }
+
+
+■ Optional Exception List
+
+public void zeroExceptions() { }
+public void oneException() throws IllegalArgumentException { }
+public void twoExceptions() throws
+IllegalArgumentException, InterruptedException { }
+
+
+■ Method Body
+
+public void walk1() { }
+public void walk2; // DOES NOT COMPILE
+public void walk3(int a) { int name = 5; }
+
+
+■ Working with Varargs
+
+public void walk1(int... nums) { }
+public void walk2(int start, int... nums) { }
+public void walk3(int... nums, int start) { } // DOES NOT COMPILE
+public void walk4(int... start, int... nums) { } // DOES NOT COMPILE
+
+15: public static void walk(int start, int... nums) {
+16: System.out.println(nums.length);
+17: }
+18: public static void main(String[] args) {
+19: walk(1); // 0
+20: walk(1, 2); // 1
+21: walk(1, 2, 3); // 2
+22: walk(1, new int[] {4, 5}); // 2
+23: }
+
+
+■ Applying Access Modifiers
+
+We are going to discuss them in order from most restrictive to least restrictive:
+
++ private: Only accessible within the same class
++ default (package private) access: private and other classes in the same package
++ protected: default access and child classes
++ public: protected and classes in the other packages
+
+
+■ Protected Access
+
+package pond.shore;
+public class Bird {
+	protected String text = "floating"; // protected access
+	protected void floatInWater() { // protected access
+		System.out.println(text);
+	}
+}
+
+package pond.goose;
+import pond.shore.Bird; // in a different package
+public class Gosling extends Bird { // extends means create subclass
+	public void swim() {
+		floatInWater(); // calling protected member
+		System.out.println(text); // calling protected member
+	} 
+}
+
++ Now let’s try the same thing from a different package:
+
+package pond.shore; // same package as Bird
+public class BirdWatcher {
+	public void watchBird() {
+		Bird bird = new Bird();
+		bird.floatInWater(); // calling protected member
+		System.out.println(bird.text); // calling protected member
+	} 
+}
+
+package pond.inland;
+import pond.shore.Bird; // different package than Bird
+public class BirdWatcherFromAfar {
+	public void watchBird() {
+		Bird bird = new Bird();
+		bird.floatInWater(); // DOES NOT COMPILE
+		System.out.println(bird.text); // DOES NOT COMPILE
+	} 
+}
+
++ There is one gotcha for protected access. Consider this class:
+
+1: package pond.swan;
+2: import pond.shore.Bird; // in different package than Bird
+3: public class Swan extends Bird { // but subclass of bird
+4: 	public void swim() {
+5: 		floatInWater(); // package access to superclass
+6: 		System.out.println(text); // package access to superclass
+7: }
+8: public void helpOtherSwanSwim() {
+9: 		Swan other = new Swan();
+10: 	other.floatInWater(); // package access to superclass
+11: 	System.out.println(other.text);// package access to superclass
+12:}
+13:public void helpOtherBirdSwim() {
+14: 	Bird other = new Bird();
+15: 	other.floatInWater(); // DOES NOT COMPILE
+16: 	System.out.println(other.text); // DOES NOT COMPILE
+17: }
+18: }
+
+figure out why these examples don’t compile?
+
+package pond.goose;
+import pond.shore.Bird;
+public class Goose extends Bird {
+	public void helpGooseSwim() {
+		Goose other = new Goose();
+		other.floatInWater();
+		System.out.println(other.text);
+	}
+	public void helpOtherGooseSwim() {
+		Bird other = new Goose();
+		other.floatInWater(); // DOES NOT COMPILE
+		System.out.println(other.text); // DOES NOT COMPILE
+	} 
+}
+
+
+■ Designing Static Methods and Fields
+
+public class Koala {
+public static int count = 0; // static variable
+	public static void main(String[] args) { // static method
+		System.out.println(count);
+	}
+}
+
+public class KoalaTester {
+	public static void main(String[] args) {
+		Koala.main(new String[0]); // call static method
+	}
+}
+
+static methods have two main purposes:
++ For utility or helper methods that don’t require any object state. Since there is no need
+to access instance variables, having static methods eliminates the need for the caller to
+instantiate the object just to call the method.
++ For state that is shared by all instances of a class, like a counter. All instances must
+share the same state. Methods that merely use that state should be static as well.
+
+
+■ Calling a Static Variable or Method
+
+5: Koala k = new Koala();
+6: System.out.println(k.count); // k is a Koala
+7: k = null;
+8: System.out.println(k.count); // k is still a Koala
+
+Koala.count = 4;
+Koala koala1 = new Koala();
+Koala koala2 = new Koala();
+koala1.count = 6;
+koala2.count = 5;
+System.out.println(Koala.count);
+Hopefully, you answered 5.
+
+
+■ Static vs. Instance
+
+public class Static {
+private String name = "Static class";
+public static void first() { }
+public static void second() { }
+public void third() { System.out.println(name); }
+public static void main(String args[]) {
+first();
+second();
+third(); // DOES NOT COMPILE
+} }
+
+Type 					Calling                                Legal?         How?
+Static method 			Another static method or variable      Yes            Using the classname
+Static method 			An instance method or variable		   No
+Instance method         A static method or variable            Yes            Using the classname or a reference variable
+Instance method         Another instance method or variable    Yes            Using a reference variable
+
+
+1: public class Gorilla {
+2: public static int count;
+3: public static void addGorilla() { count++; }
+4: public void babyGorilla() { count++; }
+5: public void announceBabies() {
+6: addGorilla();
+7: babyGorilla();
+8: }
+9: public static void announceBabiesToEveryone() {
+10: addGorilla();
+11: babyGorilla(); // DOES NOT COMPILE
+12: }
+13: public int total;
+14: public static average = total / count; // DOES NOT COMPILE
+15: }
+
+line 14 doesn’t compile because a static variable is trying to use an instance variable.
+
+
+■ Static Variables
+
+public class Initializers {
+private static int counter = 0; // initialization
+}
+
+public class Initializers {
+private static final int NUM_BUCKETS = 45;
+	public static void main(String[] args) {
+	NUM_BUCKETS = 5; // DOES NOT COMPILE
+	} 
+}
+
+The compiler will make sure that you do not accidentally try to update a final variable.
+This can get interesting. Do you think the following compiles?
+
+private static final ArrayList<String> values = new ArrayList<>();
+public static void main(String[] args) {
+values.add("changed");
+}
+
+
+■ Static Initialization
+
+
+private static final int NUM_SECONDS_PER_HOUR;
+static {
+int numSecondsPerMinute = 60;
+int numMinutesPerHour = 60;
+NUM_SECONDS_PER_HOUR = numSecondsPerMinute * numMinutesPerHour;
+}
+
+14: private static int one;
+15: private static final int two;
+16: private static final int three = 3;
+17: private static final int four; // DOES NOT COMPILE
+18: static {
+19: one = 1;
+20: two = 2;
+21: three = 3; // DOES NOT COMPILE
+22: two = 4; // DOES NOT COMPILE
+23: }
+
+
+■ Static Imports
+
+import java.util.List;
+import static java.util.Arrays.asList; // static import
+public class StaticImports {
+	public static void main(String[] args) {
+	List<String> list = asList("one", "two"); // no Arrays.
+} }
+
+1: import static java.util.Arrays; // DOES NOT COMPILE
+2: import static java.util.Arrays.asList;
+3: static import java.util.Arrays.*; // DOES NOT COMPILE
+4: public class BadStaticImports {
+5: 		public static void main(String[] args) {
+6: 		Arrays.asList("one"); // DOES NOT COMPILE
+7: } }
+
+
+■ Passing Data Among Methods
+
+Java is a “pass-by-value” language. This means that a copy of the variable is made and the
+method receives that copy.
+
+public static void main(String[] args) {
+	String name = "Webby";
+	speak(name);
+	System.out.println(name);
+}
+public static void speak(String name) {
+	name = "Sparky";
+}
+
+The correct answer is Webby.
+
+
+public static void main(String[] args) {
+	StringBuilder name = new StringBuilder();
+	speak(name);
+	System.out.println(name); // Webby
+}
+public static void speak(StringBuilder s) {
+	s.append("Webby");
+}
+
+In this case, the output is Webby because the method merely calls a method on the
+parameter. It doesn’t reassign name to a different object. In Figure 4.4, you can see
+how pass-by-value is still used. s is a copy of the variable name. Both point to the same
+StringBuilder, which means that changes made to the StringBuilder are available to
+both references.
+
+1: public class ReturningValues {
+2: public static void main(String[] args) {
+3: 		int number = 1; // 1
+4: 		String letters = "abc"; // abc
+5: 		number(number); // 1
+6: 		letters = letters(letters); // abcd
+7: 		System.out.println(number + letters); // 1abcd
+8: }
+9: public static int number(int number) {
+10: 	number++;
+11: 	return number;
+12: }
+13: public static String letters(String letters) {
+14: 	letters += "d";
+15: 	return letters;
+16: }
+17: }
+
+
+■ Overloading Methods
+
+These are all valid overloaded methods:
+
+public void fly(int numMiles) { }
+public void fly(short numFeet) { }
+public boolean fly() { return false; }
+void fly(int numMiles, short numFeet) { }
+public void fly(short numFeet, int numMiles) throws Exception { }
+
+public void fly(int numMiles) { }
+public int fly(int numMiles) { } // DOES NOT COMPILE
+
+public void fly(int numMiles) { }
+public static void fly(int numMiles) { } // DOES NOT COMPILE
+
+
+■ Overloading and Varargs
+
+public void fly(int[] lengths) { }
+public void fly(int... lengths) { } // DOES NOT COMPILE
+
+It shouldn’t be a surprise that you can call either method by passing an array:
+fly(new int[] { 1, 2, 3 });
+
+However, you can only call the varargs version with stand-alone parameters:
+fly(1, 2, 3);
+
+■ Reference Types
+
+public class ReferenceTypes {
+public void fly(String s) {
+System.out.print("string ");
+}
+public void fly(Object o) {
+System.out.print("object ");
+}
+public static void main(String[] args) {
+ReferenceTypes r = new ReferenceTypes();
+r.fly("test");
+r.fly(56);
+} }
+
+■ Primitives
+
+Primitives work in a way similar to reference variables. Java tries to find the most specific
+matching overloaded method.
+
+public class Plane {
+public void fly(int i) {
+System.out.print("int ");
+}
+public void fly(long l) {
+System.out.print("long ");
+}
+public static void main(String[] args) {
+Plane p = new Plane();
+p.fly(123);
+p.fly(123L);
+} }
+
+
+■ Putting It All Together - Order Java uses to choose the right overloaded method
+
+Rule                        Example of what will be chosen for glide(1,2)
+
+Exact match by type         public String glide(int i, int j) {}
+Larger primitive type       public String glide(long i, long j) {}
+Autoboxed type              public String glide(Integer i, Integer j) {}
+Varargs                     public String glide(int... nums) {}
+
+
+■ Creating Constructors
+
+Now let's look at some examples that aren't common but that you might see on the exam:
+
+1: public class Bunny {
+2: private String color;
+3: private int height;
+4: private int length;
+5: public Bunny(int length, int theHeight) {
+6: 		length = this.length; // backwards – no good!
+7: 		height = theHeight; // fine because a different name
+8: 		this.color = "white"; // fine, but redundant
+9: }
+10: public static void main(String[] args) {
+11: 	Bunny b = new Bunny(1, 2);
+12: 	System.out.println(b.length + " " + b.height + " " + b.color);
+13: } }
+
+
+■ Default Constructor
+
+Which of these classes do you think has a default constructor?
+
+class Rabbit1 {
+}
+class Rabbit2 {
+	public Rabbit2() { }
+}
+class Rabbit3 {
+	public Rabbit3(boolean b) { }
+}
+class Rabbit4 {
+	private Rabbit4() { }
+}
+
+Only Rabbit1 gets a default no-argument constructor
+
+
+■ Overloading Constructors
+
+public class Hamster {
+private String color;
+private int weight;
+public Hamster(int weight) { // first constructor
+	this.weight = weight;
+	color = "brown";
+}
+public Hamster(int weight, String color) { // second constructor
+	this.weight = weight;
+	this.color = color;
+}
+}
+
+public Hamster(int weight) {
+	this(weight, "brown"); // ok
+}
+
+3: public Hamster(int weight) {
+4: 		System.out.println("in constructor");
+5: 		// ready to call this
+6: 		this(weight, "brown"); // DOES NOT COMPILE
+7: }
+
+■ Final Fields Constructors
+
+public class MouseHouse {
+private final int volume;
+private final String name = "The Mouse House";
+public MouseHouse(int length, int width, int height) {
+	volume = length * width * height;
+}}
+
+■ Order of Initialization
+
+1. If there is a superclass, initialize it first (we’ll cover this rule in the next chapter. For
+now, just say “no superclass” and go on to the next rule.)
+2. Static variable declarations and static initializers in the order they appear in the file.
+3. Instance variable declarations and instance initializers in the order they appear in the file.
+4. The constructor.
+
+1: public class YetMoreInitializationOrder {
+2: static { add(2); }
+3: static void add(int num) { System.out.print(num + " "); }
+4: YetMoreInitializationOrder() { add(5); }
+5: static { add(4); }
+6: { add(6); }
+7: static { new YetMoreInitializationOrder(); }
+8: { add(8); }
+9: public static void main(String[] args) { } }
+The correct answer is 2 4 6 8 5.
+
+
+■ Encapsulating Data
+
+For encapsulation, remember that data (an instance variable) is private and getters/setters
+are public.
+
+
+■ Creating Immutable Classes
+
+One step in making a class immutable is to omit the setters
+
+We do have a constructor that allows a value to be set. 
+Remember, immutable is only measured after the object is constructed. Immutable
+classes are allowed to have values. They just can't change after instantiation.
+
+
+■ Writing Simple Lambdas
+
+a -> a.canHop()
+(Animal a) -> { return a.canHop(); }
+
+3: print(() -> true); // 0 parameters
+4: print(a -> a.startsWith("test")); // 1 parameter
+5: print((String a) -> a.startsWith("test")); // 1 parameter
+6: print((a, b) -> a.startsWith("test")); // 2 parameters
+7: print((String a, String b) -> a.startsWith("test")); // 2 parameters
+
+print(a, b -> a.startsWith("test")); // DOES NOT COMPILE
+print(a -> { a.startsWith("test"); }); // DOES NOT COMPILE
+print(a -> { return a.startsWith("test") }); // DOES NOT COMPILE
+(a, b) -> { int a = 0; return 5;} // DOES NOT COMPILE
+
+
+■ Predicates
+
+In our earlier example, we created an interface with one method:
+boolean test(Animal a);
+
+public interface Predicate<T> {
+boolean test(T t);
+}
+
+1: import java.util.*;
+2: import java.util.function.*;
+3: public class PredicateSearch {
+4: public static void main(String[] args) {
+5: 		List<Animal> animals = new ArrayList<Animal>();
+6: 		animals.add(new Animal("fish", false, true));7:
+8: 		print(animals, a -> a.canHop());
+9: }
+10: private static void print(List<Animal> animals, Predicate<Animal>↵
+checker) {
+11: for (Animal animal : animals) {
+12: 	if (checker.test(animal))
+13: 	System.out.print(animal + " ");
+14: }
+15: System.out.println();
+16: }
+17: }
+
+3: List<String> bunnies = new ArrayList<>();
+4: bunnies.add("long ear");
+5: bunnies.add("floppy");
+6: bunnies.add("hoppy");
+7: System.out.println(bunnies); // [long ear, floppy, hoppy]
+8: bunnies.removeIf(s -> s.charAt(0) != 'h');
+9: System.out.println(bunnies); // [hoppy]
+
+
+■ Summary
+
++ As you learned in this chapter, Java methods start with an access modifi er of public,
+private, protected or blank (default access). This is followed by an optional specifi er such
+as static, final, or abstract. Next comes the return type, which is void or a Java type.
+The method name follows, using standard Java identifi er rules. Zero or more parameters go
+in parentheses as the parameter list. Next come any optional exception types. Finally, zero
+or more statements go in braces to make up the method body.
+
++ Using the private keyword means the code is only available from within the same class.
+Default (package private) access means the code is only available from within the same
+package. Using the protected keyword means the code is available from the same package
+or subclasses. Using the public keyword means the code is available from anywhere. Static
+methods and static variables are shared by the class. When referenced from outside the
+class, they are called using the classname—for example, StaticClass.method(). Instance
+members are allowed to call static members, but static members are not allowed to call
+instance members. Static imports are used to import static members.
+
++ Java uses pass-by-value, which means that calls to methods create a copy of the parameters.
+Assigning new values to those parameters in the method doesn’t affect the caller’s variables.
+Calling methods on objects that are method parameters changes the state of those objects and
+is refl ected in the caller.
+
++ Overloaded methods are methods with the same name but a different parameter list.
+Java calls the most specifi c method it can fi nd. Exact matches are preferred, followed by
+wider primitives. After that comes autoboxing and fi nally varargs.
+Constructors are used to instantiate new objects. The default no-argument constructor
+is called when no constructor is coded. Multiple constructors are allowed and can call each
+other by writing this(). If this() is present, it must be the fi rst statement in the constructor.
+Constructors can refer to instance variables by writing this before a variable name to indicate
+they want the instance variable and not the method parameter with that name. The order
+of initialization is the superclass (which we will cover in Chapter 5); static variables and static
+initializers in the order they appear; instance variables and instance initializers in the order
+they appear; and fi nally the constructor.
+
++ Encapsulation refers to preventing callers from changing the instance variables directly.
+This is done by making instance variables private and getters/setters public. Immutability
+refers to preventing callers from changing the instance variables at all. This uses several
+techniques, including removing setters. JavaBeans use methods beginning with is and get
+for boolean and non-boolean property types, respectively. Methods beginning with set are
+used for setters.
+
++ Lambda expressions, or lambdas, allow passing around blocks of code. The full syntax
+looks like (String a, String b) -> { return a.equals(b); }. The parameter types can
+be omitted. When only one parameter is specifi ed without a type, the parentheses can also
+be omitted. The braces and return statement can be omitted for a single statement, making
+the short form (a -> a.equals(b). Lambdas are passed to a method expecting an interface
+with one method. Predicate is a common interface. It has one method named test
+that returns a boolean and takes any type. The removeIf() method on ArrayList takes a
+Predicate.
+
+
+*******************
+CAP 5: Class Design
+******************* 
+
+
+■ Extending a Class
+
+public/default abstract/final class ElephantSeal extends Seal {}
+
+
+■ Applying Class Access Modifiers
+
+The protected and private modifiers can only be applied to inner classes, which are classes
+that are defined within other classes, but this is well out of scope for the
+OCA exam.
+
+
+■ Creating Java Objects
+
+public class Zoo {
+}
+public class Zoo extends java.lang.Object {
+}
+
+
+■ Defining Constructors
+
+public class Animal {
+private int age;
+	public Animal(int age) {
+		super();
+		this.age = age;
+	}
+}
+public class Zebra extends Animal {
+	public Zebra(int age) {
+		super(age);
+	}
+	public Zebra() {
+		this(4);
+	}
+}
+
+
+■ Understanding Compiler Enhancements
+
+because the compiler will automatically convert them all to the last example:
+
+public class Donkey {
+}
+public class Donkey {
+	public Donkey() {
+	}
+}
+public class Donkey {
+	public Donkey() {
+	super();
+	}
+}
+
+Other example:
+
+public class Mammal {
+	public Mammal(int age) {
+}
+}
+public class Elephant extends Mammal {
+	public Elephant() { // DOES NOT COMPILE
+}
+}
+
+
+■ Reviewing Constructor Rules
+
+Constructor Definition Rules:
+
+1. The first statement of every constructor is a call to another constructor within the class
+using this(), or a call to a constructor in the direct parent class using super().
+
+2. The super() call may not be used after the first statement of the constructor.
+
+3. If no super() call is declared in a constructor, Java will insert a no-argument super()
+as the first statement of the constructor.
+
+4. If the parent doesn’t have a no-argument constructor and the child doesn’t define any
+constructors, the compiler will throw an error and try to insert a default no-argument
+constructor into the child class.
+
+5. If the parent doesn’t have a no-argument constructor, the compiler requires an explicit
+call to a parent constructor in each child constructor.
+
+
+■ Calling Inherited Class Members
+
+public void displaySharkDetails() {
+System.out.print("Shark with age: "+this.getAge());
+System.out.print(" and "+this.size+" meters long");
+System.out.print(" with "+this.numberOfFins+" fins");
+}
+
+public void displaySharkDetails() {
+System.out.print("Shark with age: "+super.getAge());
+System.out.print(" and "+super.size+" meters long");
+System.out.print(" with "+this.numberOfFins+" fins");
+}
+
+public void displaySharkDetails() {
+System.out.print("Shark with age: "+super.getAge());
+System.out.print(" and "+super.size+" meters long");
+System.out.print(" with "+super.numberOfFins+" fins"); // DOES NOT COMPILE
+}
+
+
+■ Overriding a Method
+
+The compiler performs the following checks when you override a nonprivate method:
+
+1. The method in the child class must have the same signature as the method in the parent
+class. 
+
+2. The method in the child class must be at least as accessible or more accessible than the
+method in the parent class.
+
+3. The method in the child class may not throw a checked exception that is new or
+broader than the class of any exception thrown in the parent class method.
+
+4. If the method returns a value, it must be the same or a subclass of the method in the
+parent class, known as covariant return types.
+
+
+■ Hiding Static Methods
+
+The following list summarizes the fi ve rules for hiding a method:
+
+1. The method in the child class must have the same signature as the method in the parent
+class.
+
+2. The method in the child class must be at least as accessible or more accessible than the
+method in the parent class.
+
+3. The method in the child class may not throw a checked exception that is new or
+broader than the class of any exception thrown in the parent class method.
+
+4. If the method returns a value, it must be the same or a subclass of the method in the
+parent class, known as covariant return types.
+
+5. The method defined in the child class must be marked as static if it is marked as
+static in the parent class (method hiding). Likewise, the method must not be marked
+as static in the child class if it is not marked as static in the parent class (method
+overriding).
+
+
+■ Overriding vs. Hiding Methods
+
+At runtime the child version of an overridden method is always executed for an instance
+regardless of whether the method call is defi ned in a parent or child class method.
+
+Alternatively, at runtime the parent version of a hidden method is always executed 
+if the call to the method is defined in the parent class.
+
+Let’s take a look at an example:
+
+public class Marsupial {
+public static boolean isBiped() {
+	return false;
+}
+public void getMarsupialDescription() {
+	System.out.println("Marsupial walks on two legs: "+isBiped());
+}
+}
+
+public class Kangaroo extends Marsupial {
+public static boolean isBiped() {
+	return true;
+}
+public void getKangarooDescription() {
+	System.out.println("Kangaroo hops on two legs: "+isBiped());
+}
+public static void main(String[] args) {
+	Kangaroo joey = new Kangaroo();
+	joey.getMarsupialDescription();
+	joey.getKangarooDescription();
+}
+}
+
+Marsupial walks on two legs: false
+Kangaroo hops on two legs: true
+
+
+■ Creating final methods
+
+We conclude our discussion of method inheritance with a somewhat self-explanatory
+rule: final methods cannot be overridden.
+
+In other words, you cannot hide a static method in a parent class if it is marked as final.
+
+
+■ Inheriting Variables - Hiding Variables
+
+As when hiding a static method, you can’t override a variable; you can only hide it. 
+
+Also similar to hiding a static method, the rules for accessing the parent and child variables are
+quite similar.
+
+
+■ Creating Abstract Classes
+
+public class Chicken {
+	public abstract void peck(); // DOES NOT COMPILE
+}
+
+public abstract class Turtle {
+	public abstract void swim() {} // DOES NOT COMPILE
+	public abstract int getAge() { // DOES NOT COMPILE
+	return 10;
+}
+}
+
+public final abstract class Tortoise { // DOES NOT COMPILE
+}
+
+public abstract class Goat {
+	public abstract final void chew(); // DOES NOT COMPILE
+}
+
+public abstract class Whale {
+	private abstract void sing(); // DOES NOT COMPILE
+}
+
+public abstract class Whale {
+protected abstract void sing();
+}
+public class HumpbackWhale extends Whale {
+private void sing() { // DOES NOT COMPILE
+System.out.println("Humpback whale is singing");
+}
+}
+
+
+■ Abstract Class Definition Rules:
+
+1. Abstract classes cannot be instantiated directly.
+2. Abstract classes may be defined with any number, including zero, of abstract and nonabstract
+methods.
+3. Abstract classes may not be marked as private or final.
+4. An abstract class that extends another abstract class inherits all of its abstract methods
+as its own abstract methods.
+5. The first concrete class that extends an abstract class must provide an implementation
+for all of the inherited abstract methods.
+
+
+■ Abstract Method Definition Rules:
+
+1. Abstract methods may only be defined in abstract classes.
+2. Abstract methods may not be declared private or final.
+3. Abstract methods must not provide a method body/implementation in the abstract
+class for which is it declared.
+4. Implementing an abstract method in a subclass follows the same rules for overriding a
+method. For example, the name and signature must be the same, and the visibility of
+the method in the subclass must be at least as accessible as the method in the parent
+class.
+
+
+■ Implementing Interfaces
+
+1. Interfaces cannot be instantiated directly.
+2. An interface is not required to have any methods.
+3. An interface may not be marked as final.
+4. All top-level interfaces are assumed to have public or default access, and they must
+include the abstract modifier in their definition. Therefore, marking an interface as
+private, protected, or final will trigger a compiler error, since this is incompatible
+with these assumptions.
+5. All nondefault methods in an interface are assumed to have the modifiers abstract
+and public in their definition. Therefore, marking a method as private, protected,
+or final will trigger compiler errors as these are incompatible with the abstract and
+public keywords.
+
+private final interface CanCrawl { // DOES NOT COMPILE
+private void dig(int depth); // DOES NOT COMPILE
+protected abstract double depth(); // DOES NOT COMPILE
+public final void surface(); // DOES NOT COMPILE
+}
+
+
+■ Inheriting an Interface
+
+There are two inheritance rules you should keep in mind when extending an interface:
+
+1. An interface that extends another interface, as well as an abstract class that
+implements an interface, inherits all of the abstract methods as its own abstract
+methods.
+2. The first concrete class that implements an interface, or extends an abstract class
+that implements an interface, must provide an implementation for all of the inherited
+abstract methods.
+
+public interface CanRun {}
+public class Cheetah extends CanRun {} // DOES NOT COMPILE
+public class Hyena {}
+public interface HasFur extends Hyena {} // DOES NOT COMPILE
+
+
+■ Abstract Methods and Multiple Inheritance
+
+Example:
+
+public interface Herbivore {
+	public int eatPlants();
+}
+public interface Omnivore {
+	public void eatPlants();
+}
+public class Bear implements Herbivore, Omnivore {
+	public int eatPlants() { // DOES NOT COMPILE
+		System.out.println("Eating plants: 10");
+		return 10;
+	}
+public void eatPlants() { // DOES NOT COMPILE
+	System.out.println("Eating plants");
+}
+}
+
+Example:
+
+public interface Herbivore {
+	public int eatPlants();
+}
+public interface Omnivore {
+	public void eatPlants();
+}
+public interface Supervore extends Herbivore, Omnivore {} // DOES NOT COMPILE
+
+public abstract class AbstractBear implements Herbivore, Omnivore {} // DOES NOT COMPILE
+
+
+
+■ Interface Variables
+
+Here are two interface variables rules:
+
+1. Interface variables are assumed to be public, static, and final. Therefore, marking
+a variable as private or protected will trigger a compiler error, as will marking any
+variable as abstract.
+
+2. The value of an interface variable must be set when it is declared since it is marked as
+final.
+
+public interface CanDig {
+	public static final int DEPTH = 100;
+	private int MAXIMUM_DEPTH = 100; // DOES NOT COMPILE
+	protected abstract boolean UNDERWATER = false; // DOES NOT COMPILE
+	public static String TYPE; // DOES NOT COMPILE
+}
+
+
+■ Default Interface Methods
+
+1. A default method may only be declared within an interface and not within a class or
+abstract class.
+
+2. A default method must be marked with the default keyword. If a method is marked as
+default, it must provide a method body.
+
+3. A default method is not assumed to be static, final, or abstract, as it may be used
+or overridden by a class that implements the interface.
+
+4. Like all methods in an interface, a default method is assumed to be public and will not
+compile if marked as private or protected.
+
+public interface Carnivore {
+	public default void eatMeat(); // DOES NOT COMPILE
+	public int getRequiredFoodAmount() { // DOES NOT COMPILE
+	return 13;
+	}
+}
+
+
+■ Default Methods and Multiple Inheritance
+
+public interface Walk {
+	public default int getSpeed() {
+	return 5;
+	}
+}
+public interface Run {
+	public default int getSpeed() {
+	return 10;
+	}
+}
+public class Cat implements Walk, Run { // DOES NOT COMPILE
+	public static void main(String[] args) {
+		System.out.println(new Cat().getSpeed());
+	}
+}
+
+the following modified implementation of Cat will compile and output 1:
+
+public class Cat implements Walk, Run {
+	public int getSpeed() {
+		return 1;
+	}
+public static void main(String[] args) {
+	System.out.println(new Cat().getSpeed());
+}
+}
+
+
+■ Static Interface Methods
+
+Here are the static interface method rules you need to be familiar with:
+
+1. Like all methods in an interface, a static method is assumed to be public and will not
+compile if marked as private or protected.
+
+2. To reference the static method, a reference to the name of the interface must be used.
+
+public class Bunny implements Hop {
+	public void printDetails() {
+	System.out.println(Hop.getJumpHeight()); // ok
+	}
+}
+
+
+■ Understanding Polymorphism
+
+Java supports polymorphism, the property of an object to take on many different forms. To
+put this more precisely, a Java object may be accessed using a reference with the same type
+as the object, a reference that is a superclass of the object, or a reference that defi nes an
+interface the object implements, either directly or through a superclass.
+
+
+■ Object vs. Reference
+
+1. The type of the object determines which properties exist within the object in memory.
+2. The type of the reference to the object determines which methods and variables are
+accessible to the Java program.
+
+
+■ Casting Objects
+
+1. Casting an object from a subclass to a superclass doesn’t require an explicit cast.
+2. Casting an object from a superclass to a subclass requires an explicit cast.
+3. The compiler will not allow casts to unrelated types.
+4. Even when the code compiles without issue, an exception may be thrown at runtime if
+the object being cast is not actually an instance of that class.
+
+Example:
+
+public class Bird {}
+public class Fish {
+	public static void main(String[] args) {
+		Fish fish = new Fish();
+		Bird bird = (Bird)fish; // DOES NOT COMPILE
+	}
+}
+
+Example:
+
+public class Rodent {
+}
+public class Capybara extends Rodent {
+	public static void main(String[] args) {
+		Rodent rodent = new Rodent();
+		Capybara capybara = (Capybara)rodent; // Throws ClassCastException at runtime
+	}
+}
+
+
+■ Polymorphic Parameters
+
+One of the most useful applications of polymorphism is the ability to pass instances of
+a subclass or interface to a method. 
+
+
+■ Polymorphism and Method Overriding
+
+public class Animal {
+	public String getName() {
+		return "Animal";
+	}
+}
+public class Gorilla extends Animal {
+	protected String getName() { // DOES NOT COMPILE
+		return "Gorilla";
+	}
+}
+
+
+■ Summary
+
++ This chapter took the basic class structure we presented in Chapter 4 and expanded it by
+introducing the notion of inheritance. Java classes follow a multilevel single-inheritance
+pattern in which every class has exactly one direct parent class, with all classes eventually
+inheriting from java.lang.Object. Java interfaces simulate a limited form of multiple
+inheritance, since Java classes may implement multiple interfaces.
+
++ Inheriting a class gives you access to all of the public and protected methods of the
+class, but special rules for constructors and overriding methods must be followed or the
+code will not compile. For example, if the parent class doesn’t include a no-argument constructor,
+an explicit call to a parent constructor must be provided in the child’s constructors.
+Pay close attention on the exam to any class that defi nes a constructor with arguments
+and doesn’t defi ne a no-argument constructor.
+
++ We reviewed overloaded, overridden, and hidden methods and showed how they differ,
+especially in terms of polymorphism. We also introduced the notion of hiding variables,
+although we strongly discourage this in practice as it often leads to confusing, diffi cult-tomaintain
+code.
+
++ We introduced abstract classes and interfaces and showed how you can use them to
+defi ne a platform for other developers to interact with. By defi nition, an abstract type cannot
+be instantiated directly and requires a concrete subclass for the code to be used. Since
+default and static interface methods are new to Java 8, expect to see at least one question
+on them on the exam.
+
++ Finally, this chapter introduced the concept of polymorphism, central to the Java language,
+and showed how objects can be accessed in a variety of forms. Make sure you
+understand when casts are needed for accessing objects, and be able to spot the difference
+between compile-time and runtime cast problems.
+
+
+*****************
+CAP 6: Exceptions
+*****************
+
+■ Understanding Exception Types
+
++ Runtime exceptions are also known as unchecked exceptions
+
++ A checked exception includes Exception and all subclasses that do not extend
+RuntimeException. Checked exceptions tend to be more anticipated—for example, trying
+to read a file that doesn’t exist.
+
++ For checked exceptions, Java requires the code to either handle them or declare them
+in the method signature.
+
+java.lang.Object
+java.lang.Throwable
+java.lang.Exception
+java.lang.RuntimeException
+
+java.lang.Object
+java.lang.Throwable
+java.lang.Error
+
+
+■ Throwing an Exception
+
+throw new Exception();
+throw new Exception("Ow! I fell.");
+throw new RuntimeException();
+throw new RuntimeException("Ow! I fell.");
+
+
+■ Using a try Statement
+
+3: void explore() {
+4: try {
+5: fall();
+6: System.out.println("never get here");
+7: } catch (RuntimeException e) {
+8: getUp();
+9: }
+10: seeAnimals();
+11: }
+12: void fall() { throw new RuntimeException(); }
+
+
+■ Adding a finally Block
+
+12: void explore() {
+13: try {
+14: seeAnimals();
+15: fall();
+16: } catch (Exception e) {
+17: getHugFromDaddy();
+18: } finally {
+19: seeMoreAnimals();
+20: }
+21: goHome();
+
+String s = "";
+try {
+s += "t";
+} catch(Exception e) {
+s += "c";
+} finally {
+s += "f";
+}
+s += "a";
+System.out.print(s); // The answer is tfa.
+
+public void visitMonkeys() {
+try {
+seeAnimal();
+} catch (ExhibitClosedForLunch e) {// subclass exception
+System.out.print("try back later");
+} catch (ExhibitClosed e) {// superclass exception
+System.out.print("not today");
+}
+}
+
+
+■ Throwing a Second Exception
+
+26: try {
+27: throw new RuntimeException();
+28: } catch (RuntimeException e) {
+29: throw new RuntimeException();
+30: } finally {
+31: throw new Exception();
+32: }
+
+
+30: public String exceptions() {
+31: String result = "";
+32: String v = null;
+33: try {
+34: 	try {
+35: 		result += "before";
+36: 		v.length();
+37: 		result += "after";
+38: 	} catch (NullPointerException e) {
+39: 		result += "catch";
+40: 		throw new RuntimeException();
+41: 	} finally {
+42: 		result += "finally";
+43: 		throw new Exception();
+44: 	}
+45: } catch (Exception e) {
+46: 	result += "done";
+47: }
+48: 	return result;
+49: }
+
+The correct answer is before catch finally done
+
+
+■ Recognizing Common Exception Types - Runtime Exceptions
+
+Runtime exceptions extend RuntimeException. They don’t have to be handled or declared.
+They can be thrown by the programmer or by the JVM. Common runtime exceptions
+
+include the following:
+
++ ArithmeticException Thrown by the JVM when code attempts to divide by zero
+
++ ArrayIndexOutOfBoundsException Thrown by the JVM when code uses an illegal
+index to access an array
+
++ ClassCastException Thrown by the JVM when an attempt is made to cast an exception
+to a subclass of which it is not an instance
+
++ IllegalArgumentException Thrown by the programmer to indicate that a method has
+been passed an illegal or inappropriate argument
+
++ NullPointerException Thrown by the JVM when there is a null reference where an
+object is required
+
++ NumberFormatException Thrown by the programmer when an attempt is made to convert
+a string to a numeric type but the string doesn’t have an appropriate format
+
+
+■ Recognizing Common Exception Types - Checked Exceptions
+
+Checked exceptions have Exception in their hierarchy but not RuntimeException. They
+must be handled or declared. They can be thrown by the programmer or by the JVM.
+
+Common runtime exceptions include the following:
+
++ FileNotFoundException Thrown programmatically when code tries to reference a fi le
+that does not exist
+
++ IOException Thrown programmatically when there’s a problem reading or writing a fi le
+
+
+■  Errors
+Errors extend the Error class. They are thrown by the JVM and should not be handled or
+declared. Errors are rare, but you might see these:
+
++ ExceptionInInitializerError Thrown by the JVM when a static initializer throws
+an exception and doesn’t handle it
+
++ StackOverflowError Thrown by the JVM when a method calls itself too many times
+(this is called infi nite recursion because the method typically calls itself without end)
+
++ NoClassDefFoundError Thrown by the JVM when a class that the code uses is available
+at compile time but not runtime
+
+
+■ Calling Methods That Throw Exceptions
+
+Example:
+
+class NoMoreCarrotsException extends Exception {}
+public class Bunny {
+	public static void main(String[] args) {
+		eatCarrot();// DOES NOT COMPILE
+	}
+	private static void eatCarrot() throws NoMoreCarrotsException {
+	}
+}
+
+Example:
+
+public static void main(String[] args) throws NoMoreCarrotsException {// declare exception
+	eatCarrot();
+}
+public static void main(String[] args) {
+	try {
+		eatCarrot();
+	} catch (NoMoreCarrotsException e ) {// handle exception
+		System.out.print("sad rabbit");
+	}
+}
+
+
+■ Subclasses
+
+class CanNotHopException extends Exception { }
+class Hopper {
+	public void hop() { }
+}
+class Bunny extends Hopper {
+	public void hop() throws CanNotHopException { } // DOES NOT COMPILE
+}
+
+
+■ Printing an Exception
+
+5: public static void main(String[] args) {
+6: try {
+7: hop();
+8: } catch (Exception e) {
+9: System.out.println(e);
+10: System.out.println(e.getMessage());
+11: e.printStackTrace();
+12: }
+13: }
+14: private static void hop() {
+15: throw new RuntimeException("cannot hop");
+16: }
+
+
+■ Summary
+
+An exception indicates something unexpected happened. A method can handle an exception
+by catching it or declaring it for the caller to deal with. Many exceptions are thrown
+by Java libraries. You can throw your own exception with code such as throw new
+Exception().
+
+Subclasses of java.lang.Error are exceptions that a programmer should not attempt to
+handle. Subclasses of java.lang.RuntimeException are runtime (unchecked) exceptions.
+Subclasses of java.lang.Exception, but not java.lang.RuntimeException are checked
+exceptions. Java requires checked exceptions to be handled or declared.
+
+If a try statement has multiple catch blocks, at most one catch block can run. Java
+looks for an exception that can be caught by each catch block in the order they appear, and
+the fi rst match is run. Then execution continues after the try statement. If both catch and
+finally throw an exception, the one from finally gets thrown.
+
+Common runtime exceptions include:
+
++ ArithmeticException
++ ArrayIndexOutOfBoundsException
++ ClassCastException
++ IllegalArgumentException
++ NullPointerException
++ NumberFormatException
+IllegalArgumentException and NumberFormatException are typically thrown by the
+programmer, whereas the others are typically thrown by the JVM.
+
+Common checked exceptions include:
+
++ IOException
++ FileNotFoundException
+
+Common errors include:
+
++ ExceptionInInitializerError
++ StackOverflowError
++ NoClassDefFoundError
+When a method overrides a method in a superclass or interface, it is not allowed to add
+checked exceptions. It is allowed to declare fewer exceptions or declare a subclass of a
+declared exception. Methods declare exceptions with the keyword throws.
+
+
+
+ 
+

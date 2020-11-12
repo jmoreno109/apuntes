@@ -1,0 +1,578 @@
+
+Pycharm
+Descargar versión Community Edition (gratuita) desde la web oficial:
+Sitio web
+
+Como vamos a usar la versión gratuita, descargamos también un gestor de BBDD visual, ya que esta no lo incluye. Por ejemplo DB Browser:
+Sitio web
+
+Alternativas destacables:
+Eclipse + PyDev plugin
+Sublime Text
+Visual Studio
+Editor texto favorito + Terminal ;)
+
+sublime -> djaneiro,pylinter,sublimecodeintel
+
+
+Pip
+Es un gestor de paquetes para Python. Suele venir incluido con la instalción de Python.
+
+Podemos instalar un paquete disponible con:
+
+pip install package-name
+
+PyPI
+El repositorio Python Package Index (PyPI) almacena paquetes python de código abierto.
+Sitio web
+
+Es la fuente principal que usa pip para encontrar los paquetes.
+
+// VIRTUALENV
+
+Es una herramienta para usar entornos virtuales. Con ellos podemos mantener los paquetes de nuestro proyecto agrupados, y separados de los paquetes de otros proyectos.
+
+Instalación virtualenvwrapper
+La herramienta virtualenvwrapper proporciona ciertos atajos para trabajar cómodamente con entornos virtuales.
+
+pip install virtualenvwrapper
+mkvirtualenv project-name
+workon project-name
+
+Instalar paquetes para nuestro proyecto
+Instalar Django
+Una vez activado nuestro entorno virtual, podemos instalar Django con el comando:
+
+pip install django
+
+Fichero de requirements
+Usando el archivo requirements.txt, podemos definir el listado de dependencias de nuestro proyecto, incluyendo Django.
+
+
+// COMANDOS UTILES
+
+django-admin startproject mysite
+python manage.py runserver 0:8000
+python manage.py startapp polls
+python manage.py makemigrations polls # to create migrations for those changes
+python manage.py migrate # to apply those changes to the database.
+python manage.py sqlmigrate polls 0001
+python manage.py shell
+python manage.py createsuperuser
+
+
+// ESTRUCTURA DEL PROYECTO
+
+Es el momento de crear nuestro primer proyecto, llamado beer_warehouse:
+django-admin startproject beer_warehouse
+
+Veremos que se crean varios archivos, a destacar los siguientes:
+
+manage.py: nos permite interactuar con el proyecto.
+settings.py: almacena la configuración del proyecto.
+urls.py: define las URLs que serán puntos de entrada a nuestra aplicación.
+Ahora ya podemos arrancar el servidor con:
+python manage.py runserver
+
+Y acceder a él mediante la dirección:
+localhost:8000
+
+Apps
+Ahora, vamos a añadir una app a nuestro proyecto. No es el objetivo de este capítulo del curso, así que solo vamos a crear un mínimo de ficheros vacíos para comentar su utilidad y encaje en la estructura.
+
+Las apps son pequeñas librerías que representan un aspecto concreto del proyecto. Un proyecto Django está compuesto de varias apps, la mayoría deberían ser reutilizables.
+
+Creamos la app “beers” con el comando:
+python manage.py startapp beers
+
+
+
+
+// EN ESTE CAPÍTULO NUESTRO OBJETIVO ES CREAR UNA VISTA COMPLETA
+
+Vamos a crear una vista simple que nos muestre un texto cualquiera, al acceder a localhost. Una view siempre debe tomar la petición (request) y devolver una respuesta.
+
+def first_view(request):
+    return HttpResponse("Saludos")
+Templates
+Como vemos, está página no es de mucha utilidad. Ha llegado la hora de usar archivos HTML para estructurar nuestro contenido.
+
+Necesitamos crear una plantilla (template), que será renderizada con nuestras variables. Dichas variables se almacenan en un diccionario, que usualmente llamamos context.
+
+templates/beers.html
+
+<p>{{ my_var }}</p>
+views.py
+
+def first_view(request):
+    my_var = "Hola"
+    context = {
+        'my_var': my_var,
+    }
+
+    return render(request, 'beers.html', context)
+	
+
+// STATIC FILES
+
+Veamos cómo acceder a los archivos estáticos, tales como imágenes, CSS, JS, etc.
+
+Settings
+Hemos visto que en el archivo settings.py, hay una variable llamada STATIC_URL. Sirve para indicar la URL desde la que serán servidos nuestros archivos estáticos.
+
+Supongamos que se define como ‘/static/‘, entonces podemos llamarla desde la template:
+
+{% load static %}
+
+href="{% static 'css/main.css' %}"
+que se traduce en:
+
+href="http://localhost:8000/static/css/main.css"
+Si vamos a tener archivos estáticos fuera de nuestras apps, habría que especificarlo en STATICFILES_DIRS, para que Django pueda encontrarlos.
+
+También podemos definir STATIC_ROOT para indicar donde se almacenan estos archivos. Es útil de cara al despliegue de la aplicación.
+
+
+
+// BOOTSTRAP
+
+Bootstrap es un popular framework para el frontend, con el cual nuestra web lucirá mucho mejor.
+
+Vamos a descargarlo, y añadirlo a nuestro HTML.
+
+Media files
+Los media files son los archivos que los usuarios pueden subir a nuestro sitio.
+
+Necesita una configuración similar a los static files.
+
+Usualmente, los almacenamos en el directorio /media/
+
+
+
+    <!-- Bootstrap core CSS -->
+    <link href="{% static 'node_modules/bootstrap/dist/css/bootstrap.min.css' %}" rel="stylesheet"/>
+	<!-- Custom styles for this template -->
+    <link href="{% static 'css/starter-template.css' %}" rel="stylesheet"/>
+	
+
+
+
+// BACKENDS PARA BBDD
+
+SQLite
+Django soporta muchos backends, así que en este proyecto usaremos SQLite. Es tan sencillo como tener configurado en las settings:
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),  # ruta a tu fichero SQLite
+    }
+}
+Otros backends para tu proyecto
+Si vas a hacer un proyecto más grande, lo normal es que prefieras usar otro, como MySQL o PostgreSQL. Esto requiere una configuración un poco más extensa:
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': <database_name>,
+        'USER': <username>,
+        'PASSWORD': <user_pwd>,
+        'HOST': '/Applications/XAMPP/xamppfiles/var/mysql/mysql.sock',
+        'PORT': '<port_number>',  # vacío para usar el predefinido
+    }
+}
+Además de necesitar tener sql instalado y activo en tu máquina, con una base de datos ya creada. ¡Ah! y puede que también necesites el conector de python.
+
+Migrar
+Realicemos nuestra primera migración. Con esto, Django va a recorrer nuestras INSTALLED_APPS, y crear las tablas correspondientes en la base de datos.
+
+ python manage.py migrate
+Veremos qué ha pasado en este proceso en detalle más adelante.
+
+Si examinamos la de bases de datos, veremos que han aparecido tablas nuevas. La llamada auth_user contiene los usuarios. ¡Creemos el primero!
+
+python manage.py createsuperuser
+
+
+
+
+// LOS MODELOS SON LA BASE DE CUALQUIER PROYECTO. 
+
+Mediante ellos definimos la información que necesitamos almacenar y gestionar.
+
+Se declaran como clases con atributos y métodos, así que su concepción es muy similar a la de un objeto en la POO. Django se encarga de que estos objetos sean trasladados a la base de datos, ¡Vamos a crear algunos!
+
+Comencemos con uno muy sencillo, Bar:
+
+class Bar(models.Model):
+    name = models.CharField('Name', max_length=255)
+Es bastante intuitivo, ¿verdad? Nuestro modelo Bar solo tiene un atributo llamado “name”, de tipo cadena de caracteres.
+
+Fields
+Nuestro modelo puede necesitar muchos atributos, y de tipos variados. Algunos de los más habituales son:
+
+CharField
+FloatField
+TextField
+FileField
+BooleanField
+DateField
+Hay decenas de ellos. Incluso los hay que definen relaciones entre modelos:
+
+ForeignKey
+OneToOneField
+ManyToManyField
+Cada tipo de campo acepta unos argumentos diferentes.
+
+Herencia
+Un modelo puede heredar los campos y métodos de otro, si pasamos la clase padre como argumento al definir a la hija.
+
+La Padre no necesariamente necesita existir en la base de datos, ya que no siempre tiene sentido por si misma. En ese caso, se declara como abstracta:
+
+class Padre(Model):
+    ...
+
+    class Meta:
+        abstract = True
+
+class Hija(Padre):
+    ...
+	
+	
+// MIGRACIONES
+
+	
+Django dispone de una potente herramienta para aplicar cambios a la base de datos.
+
+Cuando modificamos nuestros modelos, tenemos que crear unos archivos llamados migraciones, con el comando:
+
+python manage.py makemigrations
+Éstos contienen información sobre los cambios producidos. El siguiente paso, es aplicar los cambios en nuestra base, mediante:
+
+python manage.py migrate
+
+en caso que toque actualizar todos los registros de una columna
+
+from __future__ import unicode_literals
+import random
+from django.db import migrations
+
+def gen_tax_number(apps, schema_editor):
+    MyModel = apps.get_model('beers', 'Company')
+    for row in MyModel.objects.all():
+        row.tax_number = random.randint(1,1000)
+        row.save(update_fields=['tax_number'])
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('beers', '0004_company_tax_number'),
+    ]
+
+    operations = [
+        migrations.RunPython(gen_tax_number, reverse_code=migrations.RunPython.noop),
+    ]
+	
+	
+	
+// ADMIN
+	
+Django trae por defecto una aplicacíon para crear, ver, editar y borrar entradas de la base de datos.
+
+Podemos acceder a ella desde: localhost:8000/admin
+
+No veremos información sobre nuestros modelos, ya que primero debemos registrarlos para ello. Así que vamos a admin.py, y añadimos:
+
+admin.site.register(Company)
+
+
+
+// URLS PROCESAMIENTO
+
+Django busca entre todos los patrones definidos en los archivos urls.py, y usa la primera que coincida.
+
+Cada url llevará asocida una función para procesar la petición.
+
+Expresiones regulares
+El patrón de cada URL se define mediante expresiones regulares. Para su construcción, las reglas que habitualmente usamos son:
+
+^ - indica el comienzo
+$ - indica el final
+\d - dígito
+\w - alfanumérico
+() - delimita un patrón
+Ejemplo
+url(r'^beer/list/$', beer_list_view, name='beer-list-view'),
+url(r'^beer/detail/(?P<pk>\d+)/$', beer_detail_view, name='beer-detail-view'),
+Para acceder a la lista de cervezas, no necesitamos indicar nada especial. Así que definimos la URL con texto beer/list/ .
+
+Pero, ¿y si queremos acceder a una concreta?
+Necesitamos pasar en la URL un identificador, y capturarlo. Así estará disponible en la view.
+
+
+
+// QUERYSET
+
+Un queryset es una colección de objetos de la base de datos.
+
+Se obtienen a partir de un model manager, que es una interfaz preparada para hacer consultas. Pot defecto, todos los modelos tienen el manager objects.
+
+Obtener todas las entradas de un modelo:
+
+Beer.objects.all()
+
+Crear un nuevo objeto:
+
+Company.objects.create(name=”Compañía”, tax_number=98989)
+
+Ordenar:
+
+Beer.objects.all().order_by(‘name’)
+
+Filtrar:
+
+Company.objects.filter(tax_number=98989)
+
+Contar elementos:
+
+Company.objects.all().count()
+
+Obtener el primero:
+
+Company.objects.filter(tax_number=98989).first()
+
+
+	Field lookups
+    '''Nota Hay dos guiones bajos (_) entre title y contains.
+    El ORM de Django utiliza esta sintaxis para separar los nombres de 
+    los campos ("title") de las operaciones o filtros ("contains"). 
+    Si sólo utilizas un guion bajo, obtendrás un error como "FieldError: 
+    Cannot resolve keyword title_contains".'''
+	
+
+
+// TEMPLATE TAGS
+
+Podemos recorrer elementos:
+
+{% for beer in beers %}
+
+    <li>{{ beer }}, alcohol: {{ beer.abv }}</li>
+
+{% endfor %}
+Usar sentencias if:
+
+{% for beer in beers %}
+
+    {% if beer.abv > 1 %}
+        <li>{{ beer }}</li>
+    {% endif %}
+
+{% endfor %}
+Crear enlaces:
+
+<a href="{% url 'beer-detail-view' beer.pk %}">{{ beer }}</a>
+Y muchas cosas más.
+
+Template filters
+Tambien tenemos la opción de dar formato a nuestras variables, con los template filters.
+
+Dar formato a una fecha:
+
+{{ beer.last_modified_at|date:"D d M Y" }}
+Proporcionar un valor por defecto:
+
+{{ beer.last_modified_by|default_if_none:"nadie" }}
+Obtener primer elemento:
+
+{{ beer.name|first }}
+
+
+
+// DJANGO AUTENTICACIÓN
+
+Podemos añadirlas en nuestro archivo urls.py:
+
+url(r'^accounts/', include('django.contrib.auth.urls')),
+Solo necesitamos añadir las templates login.html y logged_out.html. En la primera hay que realizar el procesamiento del formulario. Esto lo veremos en detalle más adelante.
+
+A pesar de ello, nuestras views son accesibles para usuarios no identificados. Necesitamos el decorator login_required:
+
+@login_required
+def beer_list_view(request):
+Veremos los decorators en detalle próximamente.
+
+
+
+// CLASS-BASED VIEWS
+
+Al principio en Django solo podiamos hacer views basadas en funciones, pero con el tiempo los desarrolladores encontraron una serie de patrones habituales, y desarrollaron otra forma de implementar vistas mucho mas limpia, breve, y sobre todo, escalable y reutilizable.
+
+Las class based views, sustituyen las funciones por objetos Python, con lo cual podemos heredar atributs y métodos.
+
+Obtenemos el mismo resultado con:
+
+class MyView(View):
+    def get(self, request):
+        # <view logic>
+        return HttpResponse('result')
+que con:
+
+def my_view(request):
+    if request.method == 'GET':
+        # <view logic>
+        return HttpResponse('result')
+En ese caso nuestra clase hereda de View, y sobreescribe el método get(). Podemos ver los métodos aquí:
+https://ccbv.co.uk/projects/Django/1.11/django.views.generic.base/View/
+
+Este ejemplo es muy sencillo, sigamos para verlo más claro.
+
+List view
+Esta clase obtiene una lista de elementos, y los hace accesibles para la template.
+
+Obtenemos el mismo resultado con:
+
+class BeerListView(ListView):
+    model = Beer
+que con:
+
+def beer_list_view(request):
+    beer_list = Beer.objects.all()
+    return render(request, 'beer_list.html', {'beers': beer_list})
+Detail view
+Esta clase obtiene un elemento, y lo hace accesible para la template.
+
+Obtenemos el mismo resultado con:
+
+class BeerDetailView(DetailView):
+    model = Beer
+que con:
+
+def beer_detail_view(request, pk):
+    return render(request, 'beer_detail.html', {'beer': Beer.objects.get(pk=pk)})
+https://ccbv.co.uk/
+
+
+
+// FORM COMÚN
+
+Declaramos un formulario, es muy parecido a la creación de un modelo.
+
+class CompanyForm(forms.Form):
+    name = forms.CharField(required=True)
+    tax_num = forms.IntegerField(required=True, label="Tax number", initial=0)
+Y vemos como procesarlo en una view:
+
+def company_edit_view(request, pk):
+    company = get_object_or_404(Company, pk=pk)
+
+    if request.method == 'POST':
+        form = CompanyForm(request.POST)
+        if form.is_valid():
+            company.name = form.cleaned_data['name']
+            company.tax_number = form.cleaned_data['tax_num']
+            company.save()
+
+    else:
+        form = CompanyForm(initial={
+            'name': company.name,
+            'tax_num': company.tax_number
+        })
+
+    context = {
+        'company': company,
+        'form': form
+    }
+
+    return render(request, 'company/company_edit.html', context)
+Django se encarga de comprobar si es válido con is_valid().
+
+ModelForm
+¿Y si nuestro form tuviera información del modelo? ModelForm.
+
+Queda mucho mas sencillo:
+
+class CompanyForm(forms.ModelForm):
+    class Meta:
+        model = Company
+        fields = ['name', 'tax_number']
+
+def company_edit_view(request, pk):
+    company = get_object_or_404(Company, pk=pk)
+
+    if request.method == 'GET':
+        form = CompanyForm(instance=company)
+    else:
+        form = CompanyForm(request.POST, instance=company)
+        if form.is_valid():
+            form.save()
+
+    context = {
+        'company': company,
+        'form': form
+    }
+
+    return render(request, 'company/company_edit.html', context)
+UpdateView
+¿Y si existiese una class-based view que abstraiga el procesado del formulario? UpateView.
+
+class CompanyUpdateView(UpdateView):
+    model = Company
+    form_class = CompanyForm
+    success_url = reverse_lazy('landing-view')
+	
+	
+
+// LIMPIAR UN CAMPO FORMS
+
+Podemos personalizar la validación de un campo concreto:
+
+class CompanyForm(forms.ModelForm):
+    def clean_name(self):
+        data = self.cleaned_data['name']
+        if data == "florida":
+            raise ValidationError("That name is forbidden.")
+
+        return data
+Quedando así el formulario invalidado. Nótese que la validación estándar del campo ya está hecha antes de nuestra comprobación.
+
+Validar campos dependientes
+
+A menudo necesitamos comprobar el valor de 2 campos para decidir si el formulario debe quedar invalidado. Pare eso, usamos el método clean() del formulario:
+
+Este método se ejecuta despues de la validación de cada campo., con lo cual cleaned_data ya está relleno.
+
+    def clean(self):
+        cleaned_data = super().clean()
+        name = self.cleaned_data.get("name")
+        tax = self.cleaned_data.get("tax_number")
+
+        if name == "michigan" and tax > 100:
+            self.add_error('name', "No aceptamos ese nombre para un numero tan alto")
+Podrímos haber lanzado una excepción global del formulario, pero en este caso vamos a probar a mostrar el error asociado a un campo.
+
+
+
+// CRISPY FORMS
+
+Este módulo nos proporciona un gran número de utilidades para construir y manejar formularios.
+
+class CompanyForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = 'company-form'
+        self.helper.form_class = 'blue'
+        self.helper.label_class = 'col-lg-3'
+        self.helper.field_class = 'col-lg-9'
+        self.helper.form_method = 'post'
+        self.helper.form_action = ''
+
+        self.helper.add_input(Submit('submit-name', 'Guardar'))
+Podemos elegir el template pack, e incluso crear el nuestro propio.
+
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
+
+
+

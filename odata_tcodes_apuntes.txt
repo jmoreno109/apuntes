@@ -1,0 +1,11 @@
+
+/n/ui5/theme_designer
+
+
+/n/IWFND/ERROR_LOG	Access OData services error log
+
+/n/IWFND/MAINT_SERVICE	Activate and maintain OData services
+
+/n/IWFND/GW_CLIENT	Consume and test OData services
+ 
+

@@ -1,0 +1,791 @@
+
+
+/h – esta es la forma básica de lanzarlo, sin configuraciones adicionales.
+/hs – ejecuta el debugger con la función de debugging que el sistema activa.
+/ha – inicia el debugger saltando la gestión de las pantallas. Muy útil para los module pools, por ejemplo.
+/hmusa – inicia el debugger y crea una snapshot de memoria que se podrá analizar mediante la transacción S_MEMORY_INSPECTOR, 
+útil si nos encontramos con grandes pérdidas o incrementos de memoria en algún programa concreto.
+
+
+
+IF abap_type = cl_abap_typedescr=>typekind_date.
+
+
+******************************************************************************
+
+
+
+RS_ABAP_SOURCE_SCAN
+DEMO_REGEX_TOY
+
+
+
+******************************************************************************
+
+
+In traditional ABAP, these currency and unit conversions is done with standard functions provided by SAP.  For example
+
+CONVERT_TO_LOCAL_CURRENCY
+UNIT_CONVERSION_SIMPLE
+
+
+
+
+******************************************************************************
+
+-->operaciones con fechas
+
+	  data: lv_newdate type sy-datum.
+      call function 'RP_CALC_DATE_IN_INTERVAL'
+        exporting
+          date      = sy-datum
+          days      = 00
+          months    = 01
+          signum    = '-'
+          years     = 00
+        importing
+          calc_date = lv_newdate.
+
+******************************************************************************
+
+
+clases
+
+// pop alv
+cl_reca_gui_f4_popup
+
+
+
+******************************************************************************
+bapis
+
+
+// pedido de compras
+CALL FUNCTION 'BAPI_PO_GETDETAIL'
+
+
+//obtiene el detalle de una reservacion
+CALL FUNCTION 'BAPI_RESERVATION_GETDETAIL'
+
+//actualiza una reservacion
+CALL FUNCTION 'BAPI_RESERVATION_CHANGE'
+
+
+ *********************************************************************** 
+ 
+ 
+-> set de datos 
+ 
+  data lit_set_lines_basic type table of rgsbv.
+  data lv_setid type sethier-setid.
+
+  call function 'G_SET_GET_ID_FROM_NAME'
+    exporting
+      shortname                = 'ZTEST_RANGOS2'
+    importing
+      new_setid                = lv_setid
+    exceptions
+      no_set_found             = 1
+      no_set_picked_from_popup = 2
+      wrong_class              = 3
+      wrong_subclass           = 4
+      table_field_not_found    = 5
+      fields_dont_match        = 6
+      set_is_empty             = 7
+      formula_in_set           = 8
+      set_is_dynamic           = 9
+      others                   = 10.
+  if sy-subrc = 0.
+    call function 'G_SET_FETCH'
+      exporting
+        setnr           = lv_setid
+      tables
+        set_lines_basic = lit_set_lines_basic
+      exceptions
+        no_authority    = 1
+        set_is_broken   = 2
+        set_not_found   = 3
+        others          = 4.
+    if sy-subrc eq 0.
+      if line_exists( lit_set_lines_basic[ from = conv poper( st_test-rango_inf ) to = conv poper( st_test-rango_sup ) ] ).
+      else.
+        message 'El rango ingresado no es permitido' type 'S' display like 'E'.
+        return.
+      endif.
+    endif.
+  endif.
+
+
+
+******************************************************************************
+
+
+
+
+http://sap-f2.blogspot.com.co/2010/03/useful-view-tables-from-different.html
+
+SALV_TEST_TABLE_EVENTS
+
+
+
+-> OBTENER PRIMER DIA Y ULTIMO DEL AÑO
+
+  DATA LV_FIRST_DAY TYPE D.
+  DATA LV_LAST_DAY  TYPE D.
+
+  CALL FUNCTION 'FIRST_AND_LAST_DAY_IN_YEAR_GET'
+    EXPORTING
+      I_GJAHR     = SY-DATUM+0(4)
+      I_PERIV     = '24'
+    IMPORTING
+      E_FIRST_DAY = LV_FIRST_DAY
+      E_LAST_DAY  = LV_LAST_DAY.
+
+
+
+***********************************************************************
+
+
+-> obtener un valor apartir de la moneda
+
+  DATA LV_CURR TYPE BAPICURR-BAPICURR.
+
+    CALL FUNCTION 'BAPI_CURRENCY_CONV_TO_EXTERNAL'
+      EXPORTING
+        CURRENCY        = ST_CVENTAS-WAERK
+        AMOUNT_INTERNAL = ST_CVENTAS-NETWR
+      IMPORTING
+        AMOUNT_EXTERNAL = LV_CURR.
+
+
+
+
+
+***********************************************************************
+
+
+
+-> obtener texto estandar de sap
+
+DATA IT_LINE TYPE TABLE OF TLINE.
+DATA ST_LINE TYPE TLINE.
+
+
+CALL FUNCTION 'READ_TEXT'
+  EXPORTING
+*   CLIENT                        = SY-MANDT
+    ID                            = 'ST'
+    LANGUAGE                      = SY-LANGU
+    NAME                          = 'ZRESOL_CO10_ANT'
+    OBJECT                        = 'TEXT'
+*   ARCHIVE_HANDLE                = 0
+*   LOCAL_CAT                     = ' '
+* IMPORTING
+*   HEADER                        =
+  TABLES
+    LINES                         = IT_LINE
+* EXCEPTIONS
+*   ID                            = 1
+*   LANGUAGE                      = 2
+*   NAME                          = 3
+*   NOT_FOUND                     = 4
+*   OBJECT                        = 5
+*   REFERENCE_CHECK               = 6
+*   WRONG_ACCESS_TO_ARCHIVE       = 7
+*   OTHERS                        = 8
+          .
+IF SY-SUBRC <> 0.
+ MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+         WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+ENDIF.
+
+
+
+
+
+***********************************************************************
+
+->modificar un infotipo
+
+
+
+* Bloquea el empleado para poder modificar el infotipo
+  CALL FUNCTION 'HR_EMPLOYEE_ENQUEUE'
+    EXPORTING
+      NUMBER = LR_P0015-PERNR.
+
+* Define los campos a modificar
+  LR_P0015-INFTY = LC_INFTY.
+  LR_P0015-ZBASE = LR_P0015-ZUORD.
+
+* Actualiza el nuevo campo zbase por zuord
+  CALL FUNCTION 'HR_INFOTYPE_OPERATION'
+    EXPORTING
+      INFTY         = LR_P0015-INFTY
+      NUMBER        = LR_P0015-PERNR
+      SUBTYPE       = LR_P0015-SUBTY
+      VALIDITYEND   = LR_P0015-ENDDA
+      VALIDITYBEGIN = LR_P0015-BEGDA
+      RECORD        = LR_P0015
+      OPERATION     = LC_OPERATION
+    IMPORTING
+      RETURN        = RETURN.
+
+* Valida errores de actualizacion del infotipo
+  IF RETURN IS NOT INITIAL.
+    WRITE :/ 'Error Ocurrido:',RETURN-MESSAGE.
+    WRITE :/ 'PERNR:',LR_P0015-PERNR,' SUBTY:',LR_P0015-SUBTY.
+  ENDIF.
+
+* Desbloquea el empleado
+  CALL FUNCTION 'HR_EMPLOYEE_DEQUEUE'
+    EXPORTING
+      NUMBER = LR_P0015-PERNR.
+  COMMIT WORK AND WAIT.
+
+
+
+***********************************************************************
+
+-> Join the internal tables
+
+
+  LOOP AT lt_scustom ASSIGNING <fs_scustom>
+    WHERE name = 'Horst Rahn'.
+
+    LOOP AT lt_sbook ASSIGNING <fs_sbook>
+      WHERE customid = <fs_scustom>-id.
+
+      LOOP AT lt_spfli ASSIGNING <fs_spfli>
+        WHERE carrid = <fs_sbook>-carrid
+          AND connid = <fs_sbook>-connid
+          AND carrid CP 'A*'.
+
+        ls_data-carrid = <fs_spfli>-carrid.
+        ls_data-connid = <fs_spfli>-connid.
+        ls_data-fldate = <fs_sbook>-fldate.
+        ls_data-name   = <fs_scustom>-name.
+
+        APPEND ls_data TO lt_data.
+      ENDLOOP.
+    ENDLOOP.
+  ENDLOOP.
+
+
+
+***********************************************************************
+
+
+-> joins internal table with db tables
+
+
+IF NOT it_detail[] IS INITIAL.  
+   
+   sort it_detail ascending by bukrs zzref_anln1  zzref_anln2.</b>
+ 
+   SELECT anla~anln1 anla~anln2 anla~deakt  
+          anlc~kansw anlc~knafa anlc~nafag    
+              FROM anla INNER JOIN anlc ON 
+                  anla~bukrs = anlc~bukrs and 
+                  anla~anln1 = anlc~anln1 AND 
+                  anla~anln2 = anlc~anln2    
+                      INTO TABLE IT_ANLC  
+                        FOR ALL ENTRIES IN it_detail         
+            WHERE anla~bukrs = it_detail-bukrs
+              AND anla~anln1 = it_detail-zzref_anln1             
+              AND anla~anln2 = it_detail-zzref_anln2.
+ENDIF.
+
+
+
+***********************************************************************
+
+-> hilos procesos en paralelo
+
+CALL FUNCTION 'ZJM_TEST_ACREEDOR_DEUDOR'
+  STARTING NEW TASK 'TASK1'
+  DESTINATION 'NONE'
+  PERFORMING CALL1 ON END OF TASK
+  EXPORTING
+    IS_CUSTVEN_WSSICA = IS_CUSTVEN_WSSICA.
+
+WAIT UNTIL CHK1 = ABAP_TRUE AND CHK2 = ABAP_TRUE.
+
+WRITE :/ 'LV_VENDOR_NO=',LV_VENDOR_NO.
+WRITE :/ 'LV_CUSTOMER_NO=', LV_CUSTOMER_NO.
+
+FORM CALL1 USING TASKNAME.
+  RECEIVE RESULTS FROM FUNCTION 'ZJM_TEST_ACREEDOR_DEUDOR'
+ IMPORTING
+   EV_VENDOR_NO  = LV_VENDOR_NO
+   EV_CUSTOMER_NO = LV_CUSTOMER_NO
+  TABLES
+    ET_MESSAGES  = ET_MESSAGES.
+  CHK1 = ABAP_TRUE.
+ENDFORM.
+
+FORM CALL2 USING TASKNAME.
+  RECEIVE RESULTS FROM FUNCTION 'ZJM_TEST_ACREEDOR_DEUDOR'
+ IMPORTING
+   EV_VENDOR_NO  = LV_VENDOR_NO2
+   EV_CUSTOMER_NO = LV_CUSTOMER_NO2
+  TABLES
+    ET_MESSAGES  = ET_MESSAGES2.
+  CHK2 = ABAP_TRUE.
+ENDFORM.
+
+
+
+***********************************************************************
+
+
+-> cargar un excell en una tabla interna
+
+
+LV_FILENAME = 'D:\test_hana.xlsx'.
+
+
+* Upload this packet
+CALL FUNCTION 'ALSM_EXCEL_TO_INTERNAL_TABLE'
+  EXPORTING
+    FILENAME                = LV_FILENAME
+    I_BEGIN_COL             = 1 "LV_BEGIN_COL
+    I_BEGIN_ROW             = 3 "LV_BEGIN_ROW
+    I_END_COL               = 10 "LV_END_COL
+    I_END_ROW               = 5 "LV_END_ROW
+  TABLES
+    INTERN                  = LT_EXCELDATA
+  EXCEPTIONS
+    INCONSISTENT_PARAMETERS = 1
+    UPLOAD_OLE              = 2
+    OTHERS                  = 3.
+
+* Something wrong, exit
+IF SY-SUBRC <> 0.
+*  MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*          WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+* RV_EMPTY = 'X'.
+  EXIT.
+ENDIF.
+
+
+***********************************************************************
+
+-> cargar un excell en una tabla interna # 2
+
+
+DATA: IT_RAW TYPE TRUXS_T_TEXT_DATA.
+DATA TAB_CUSTVEN_WSSICA TYPE STANDARD TABLE OF ZFI_CUSTVEN_WSSICA.
+
+CALL FUNCTION 'TEXT_CONVERT_XLS_TO_SAP'
+  EXPORTING
+*   I_FIELD_SEPERATOR    =
+*   I_LINE_HEADER        =
+    I_TAB_RAW_DATA       = IT_RAW
+    I_FILENAME           = LV_FILENAME
+  TABLES
+    I_TAB_CONVERTED_DATA = TAB_CUSTVEN_WSSICA[]
+* EXCEPTIONS
+*   CONVERSION_FAILED    = 1
+*   OTHERS               = 2
+  .
+IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+LOOP AT TAB_CUSTVEN_WSSICA INTO DATA(WA_TAB).
+  WRITE: / WA_TAB-AKONT.
+ENDLOOP.
+
+
+
+***********************************************************************
+
+-> cargar archivo plano en una tabla interna
+
+
+        data lv_data_tab type standard table of ty_file.
+        data wa_data_tab like LINE OF lv_data_tab.
+
+        data: t_tab    type table of string,
+              v_string type string.
+
+        cl_gui_frontend_services=>gui_upload(
+          exporting
+            filename                = l_file //ruta del archivo
+          changing
+             data_tab                = t_tab
+
+          exceptions
+            file_open_error         = 1
+            file_read_error         = 2
+            no_batch                = 3
+            gui_refuse_filetransfer = 4
+            invalid_type            = 5
+            no_authority            = 6
+            unknown_error           = 7
+            bad_data_format         = 8
+            header_not_allowed      = 9
+            separator_not_allowed   = 10
+            header_too_long         = 11
+            unknown_dp_error        = 12
+            access_denied           = 13
+            dp_out_of_memory        = 14
+            disk_full               = 15
+            dp_timeout              = 16
+            not_supported_by_gui    = 17
+            error_no_gui            = 18
+            others                  = 19
+        ).
+        if sy-subrc <> 0.
+         message id sy-msgid type sy-msgty number sy-msgno
+           with sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+        endif.
+
+        loop at t_tab into v_string.
+          clear: wa_data_tab.
+          split v_string at ';'
+                into
+                wa_data_tab-tipo_comision
+                wa_data_tab-sociedad
+                wa_data_tab-sdv_financiera
+                wa_data_tab-cliente
+                wa_data_tab-rango_inf
+                wa_data_tab-rango_sup
+                wa_data_tab-porcen_liq
+                wa_data_tab-fech_vig_ini
+                wa_data_tab-fech_vig_fin.
+          append wa_data_tab to lv_data_tab.
+        endloop.
+
+
+***********************************************************************
+
+
+
+-> Crea acreedor en sap
+
+  LS_VENDORS-COMPANY_DATA-CURRENT_STATE = LC_CD_CSTATE.
+  APPEND LS_COMPANY_DATA TO LS_VENDORS-COMPANY_DATA-COMPANY.
+  APPEND LS_VENDORS TO LT_VENDORS.
+  APPEND LINES OF LT_VENDORS TO LS_MASTER_DATA-VENDORS.
+
+
+* Crea el acreedor en SAP
+  VMD_EI_API=>MAINTAIN_BAPI(
+    EXPORTING
+      IS_MASTER_DATA           = LS_MASTER_DATA
+    IMPORTING
+      ES_MASTER_DATA_CORRECT   = ES_MASTER_DATA_CORRECT
+      ES_MESSAGE_CORRECT       = ES_MESSAGE_CORRECT
+      ES_MASTER_DATA_DEFECTIVE = ES_MASTER_DATA_DEFECTIVE
+      ES_MESSAGE_DEFECTIVE     = ES_MESSAGE_DEFECTIVE
+  ).
+
+* Valida si el acreedor fue creado exitosamente
+  IF ES_MESSAGE_DEFECTIVE-IS_ERROR IS INITIAL.
+    CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
+      EXPORTING
+        WAIT = 'X'.
+    LOOP AT ES_MASTER_DATA_CORRECT-VENDORS INTO DATA(WA_VENDORS).
+      EV_VENDOR_NO = WA_VENDORS-HEADER-OBJECT_INSTANCE-LIFNR.
+      EV_IS_CREATED = ABAP_TRUE.
+      EXIT.
+    ENDLOOP.
+  ELSE.
+    EV_IS_CREATED = ABAP_FALSE.
+    EV_IS_ERROR = ES_MESSAGE_DEFECTIVE-IS_ERROR.
+    APPEND LINES OF ES_MESSAGE_DEFECTIVE-MESSAGES TO ET_MESSAGES.
+  ENDIF.
+
+
+***********************************************************************
+
+-> Crea deudor en sap
+
+
+ LS_CUSTOMERS-COMPANY_DATA-CURRENT_STATE = LC_CD_CSTATE.
+  APPEND LS_COMPANY_DATA TO LS_CUSTOMERS-COMPANY_DATA-COMPANY.
+  APPEND LS_CUSTOMERS TO LT_CUSTOMERS.
+  APPEND LINES OF LT_CUSTOMERS TO LS_MASTER_DATA-CUSTOMERS.
+
+* Crea el deudor en SAP
+  CMD_EI_API=>MAINTAIN_BAPI(
+      EXPORTING
+      IS_MASTER_DATA           = LS_MASTER_DATA
+    IMPORTING
+      ES_MASTER_DATA_CORRECT   = ES_MASTER_DATA_CORRECT
+      ES_MESSAGE_CORRECT       = ES_MESSAGE_CORRECT
+      ES_MASTER_DATA_DEFECTIVE = ES_MASTER_DATA_DEFECTIVE
+      ES_MESSAGE_DEFECTIVE     = ES_MESSAGE_DEFECTIVE
+  ).
+
+* Valida si el deudor fue creado exitosamente
+  IF ES_MESSAGE_DEFECTIVE-IS_ERROR IS INITIAL.
+    CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
+      EXPORTING
+        WAIT = 'X'.
+    LOOP AT ES_MASTER_DATA_CORRECT-CUSTOMERS INTO DATA(WA_CUSTOMERS).
+      EV_CUSTOMER_NO = WA_CUSTOMERS-HEADER-OBJECT_INSTANCE-KUNNR.
+      EV_IS_CREATED = ABAP_TRUE.
+      EXIT.
+    ENDLOOP.
+  ELSE.
+    EV_IS_CREATED = ABAP_FALSE.
+    EV_IS_ERROR = ES_MESSAGE_DEFECTIVE-IS_ERROR.
+    APPEND LINES OF ES_MESSAGE_DEFECTIVE-MESSAGES TO ET_MESSAGES.
+  ENDIF.
+
+
+
+***********************************************************************
+
+-> concatenar version 7.4
+
+DATA(LV_OUT) = |Hello| & |1| & |world|.
+
+DATA(LV_OUT2) = |{ NUM1 }| & | - | & |{ NUM2 }|.
+
+DATA(LV_OUT3) = NUM1 && |+| && NUM2.
+
+data(lv_out) = |Registro: { sy-tabix } - Valor: { <fs>-tipo_comision } - Mensaje: El tipo de comision no es valido |.
+
+***********************************************************************
+
+
+-> using value to create internal tables
+
+ DATA lt_matnr TYPE STANDARD TABLE OF matnr.
+ lt_matnr = VALUE #( ( 'a' ) ( 'b' ) ( 'c' ) ( 'd' ) ( 'e' ) ).
+ 
+************************************************************************
+ 
+-> another way of declaring same with type
+
+ TYPES:t_matnr TYPE STANDARD TABLE OF matnr WITH DEFAULT KEY .
+ DATA(lt_data) = VALUE t_matnr( ( 'a' ) ( 'b' ) ( 'c' ) ( 'd' ) ( 'e' ) ).
+
+
+************************************************************************
+
+
+data lt_bsad_aux type standard table of bsad with non-unique sorted key blart components blart shkzg.
+
+lt_bsad_aux = lt_bsad.
+
+data(lv_total) = reduce i( init x = 0 for wa in filter #( lt_bsad_aux using key blart where blart = 'RV' and shkzg = 'H' ) next x = x + wa-dmbtr ).
+
+
+************************************************************************
+
+
+data: lt_bsad type standard table of bsad with non-unique sorted key augbl components augbl.
+lt_bsad_aux = filter #( lt_bsad using key augbl where augbl = <fs_data>-augbl ).
+
+
+DATA: lt_ztsd_fe_bp_tri TYPE TABLE OF ztsd_fe_bp_tri .
+lt_ztsd_fe_bp_tri = VALUE #( FOR ls_tribut IN git_alv_tribut ( partner = gs_kna1-kunnr tribut = ls_tribut-tribut  ) ).
+
+
+
+
+************************************************************************
+
+* html/pdf control
+DATA: pdf_html_control TYPE REF TO cl_gui_html_viewer,
+      pdf_my_container TYPE REF TO cl_gui_custom_container,
+      pdf_alignment    TYPE i,
+      pdf_size         TYPE i.
+
+
+
+  TYPES: lt_pdf_table(1000) TYPE x.
+  DATA: l_url(80)  TYPE c,
+        l_pdf_data TYPE STANDARD TABLE OF lt_pdf_table,
+        l_pdf_line TYPE lt_pdf_table,
+        l_offset   TYPE i,
+        l_len      TYPE i.
+
+  l_len = xstrlen( pdf_data ).
+  WHILE l_len >= 1000.
+    l_pdf_line = pdf_data+l_offset(1000).
+    APPEND l_pdf_line TO l_pdf_data.
+    ADD 1000 TO l_offset.
+    SUBTRACT 1000 FROM l_len.
+  ENDWHILE.
+  IF l_len > 0.
+    l_pdf_line = pdf_data+l_offset(l_len).
+    APPEND l_pdf_line TO l_pdf_data.
+  ENDIF.
+
+
+  CALL METHOD pdf_html_control->load_data
+    EXPORTING
+      url          = 'smart.pdf'
+      size         = pdf_size
+      type         = 'application'
+      subtype      = 'pdf'
+    IMPORTING
+      assigned_url = l_url
+    CHANGING
+      data_table   = l_pdf_data
+    EXCEPTIONS
+      OTHERS       = 1.
+
+  IF sy-subrc <> 0.
+    RAISE cntl_error.
+  ENDIF.
+
+* show data
+  CALL METHOD pdf_html_control->show_data
+    EXPORTING
+      url    = l_url
+    EXCEPTIONS
+      OTHERS = 1.
+  IF sy-subrc <> 0.
+    RAISE cntl_error.
+  ENDIF.
+  
+
+************************************************************************
+  
+ 
+ 
+  DATA(variable) = 'A'.
+" MOVE 'A' TO variable.
+
+DATA(uppercase) = to_upper( lowercase ).
+" TRANSLATE lowercase TO UPPER CASE.
+
+index += 1.         " >= NW 7.54
+index = index + 1.  " < NW 7.54
+" ADD 1 TO index.
+
+DATA(object) = NEW /clean/my_class( ).
+" CREATE OBJECT object TYPE /dirty/my_class.
+
+result = VALUE #( FOR row IN input ( row-text ) ).
+" LOOP AT input INTO DATA(row).
+"  INSERT row-text INTO TABLE result.
+" ENDLOOP.
+
+DATA(line) = value_pairs[ name = 'A' ].
+" READ TABLE value_pairs INTO DATA(line) WITH KEY name = 'A'.
+
+DATA(exists) = xsdbool( line_exists( value_pairs[ name = 'A' ] ) ).
+IF line_exists( value_pairs[ name = 'A' ] ).
+" READ TABLE value_pairs TRANSPORTING NO FIELDS WITH KEY name = 'A'.
+" DATA(exists) = xsdbool( sy-subrc = 0 ).
+
+
+************************************************************************
+
+
+*        lr_columns->set_color_column( value = 'LINE_COLOR'  ).
+
+*      if <fs>-tipo_novedad = 1.
+*        clear ls_factura.
+*        ls_factura =  corresponding #( <fs> ).
+*        ls_color-color-col = 3.
+*        ls_color-color-int = 0.
+*        ls_color-color-inv = 0.
+*        append ls_color to ls_factura-line_color.
+*        append ls_factura to gt_facturas.
+
+*        lr_sort = gr_salv_table->get_sorts( ).
+*        lr_sort_column = lr_sort->add_sort( columnname = 'TIPO' ).
+*        lr_sort_column->set_subtotal( value = if_salv_c_bool_sap=>true ).
+
+
+
+************************************************************************
+
+DATA itab TYPE TABLE OF i.
+itab = VALUE #( ( 3 ) ( 5 ) ).
+
+"Bad example
+itab[ table_line = 3 ] =
+  itab[ table_line = 3 ] * itab[ table_line = 3 ].
+
+"Good example
+ASSIGN itab[ table_line = 5 ] TO FIELD-SYMBOL(<fs>).
+<fs> = <fs> * <fs>.
+
+
+************************************************************************
+
+	  SELECT * FROM stxl WHERE mandt=201 and tdid='0001' and tdobject='MVKE';
+
+
+      CONCATENATE lwa_vbrp-matnr lwa_vbrp-vkorg_auft lwa_vbrp-vtweg_auft INTO lv_name RESPECTING BLANKS.
+
+      CALL FUNCTION 'READ_TEXT'
+        EXPORTING
+          id                      = c_0001
+          language                = sy-langu
+          name                    = lv_name
+          object                  = c_mvke
+        TABLES
+          lines                   = lti_lines
+        EXCEPTIONS
+          id                      = 1
+          language                = 2
+          name                    = 3
+          not_found               = 4
+          object                  = 5
+          reference_check         = 6
+          wrong_access_to_archive = 7
+          OTHERS                  = 8.
+      IF sy-subrc <> 0.
+* Implement suitable error handling here
+      ENDIF.
+
+
+************************************************************************
+	  
+	  
+	  TYPES:
+  BEGIN OF ty_customer,
+    customer TYPE char10,
+    NAME     TYPE char30,
+    city     TYPE char30,
+    route    TYPE char10,
+  END   OF ty_customer.
+TYPES: tt_customers TYPE SORTED TABLE OF ty_customer
+          WITH UNIQUE KEY customer.
+ 
+TYPES: tt_citys TYPE STANDARD TABLE OF char30 WITH EMPTY KEY.
+ 
+DATA(t_customres) =
+  VALUE tt_customers(
+    ( customer = 'C0001' NAME = 'Test Customer 1' city = 'NY' route = 'R0001' )
+    ( customer = 'C0002' NAME = 'Customer 2'      city = 'LA' route = 'R0003' )
+    ( customer = 'C0003' NAME = 'Good Customer 3' city = 'DFW' route = 'R0001' )
+    ( customer = 'C0004' NAME = 'Best Customer 4' city = 'CH' route = 'R0003' )
+  ).
+ 
+* FOR to get the column CITY
+DATA(t_city) = VALUE tt_citys( FOR ls_cust IN t_customres ( ls_cust-city ) ).
+
+DATA(t_city_in_03) = VALUE tt_citys( FOR ls_cust IN t_customres WHERE ( route = 'R0001' ) ( ls_cust-city ) ).
+ 
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

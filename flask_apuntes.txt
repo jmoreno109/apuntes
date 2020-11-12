@@ -1,0 +1,586 @@
+ 
+ 
+// CABECERAS
+
+Tanto la petición como las respuestas tienen una serie de metainformación llamadas cabeceras, podemos indicar las más importantes:
+
+Server: indica el tipo de servidor HTTP empleado.
+Age: indica el tiempo que ha estado el objeto servido almacenado en un proxy cache (en segundos)
+Cache-control: lo usa el servidor para decirle al navegador que objetos cachear, durante cuanto tiempo, etc..
+Content-Encoding: se indica el tipo de codificación empleado en la respuesta
+Expires: indica una fecha y hora a partir del cual la respuesta HTTP se considera obsoleta. Usado para gestionar caché.
+Location: usado para especificar una nueva ubicación en casos de redirecciones.
+Set-Cookie: sirve para crear cookies. Las famosos cookies viajan entre el servidor y el navegador a través de estas cabeceras HTTP.
+Cookies
+Las cookie son información que el navegador guarda en memoria o en el disco duro dentro de ficheros de texto, a solicitud del servidor. Incluyen datos generados por el servidor, o datos introducidos en un formulario por el usuario, enviados al servidor y reenviados por
+éste al cliente.
+
+HTTP es un protocolo sin estados (no almacena el estado de la sesión entre peticiones sucesivas), las cookies pueden usarse para asociar estado. Proporcionan una manera de conservar cierta información entre peticiones del cliente.
+
+Ejemplos de uso:
+
+Guarda información de la sesión.
+Comercio electrónico.
+Carrito de la compra.
+Personalización de páginas
+Idiomas
+Seguimiento de las visitas a un Web
+Carteles publicitarios
+Almacenamiento del login y password
+Sesiones
+HTTP es un protocolo sin manejo de estados. Las sesiones son fundamentales en las aplicaciones
+Web. Permiten:
+
+Definir varios estados distintos en la aplicación.
+Colocar las solicitudes y respuestas dentro de un contexto más amplio.
+Los clientes y servidores intercambian información sobre el estado de la aplicación.
+El servidor almacenará la información necesaria para llevar el seguimiento de la sesión.
+
+Identificador de la sesión.
+Identificador del usuario en sesión.
+Tiempo de expiración de la sesión.
+Variables asociadas a la sesión.
+El mecanismo más usual para permitir las sesiones es por medio de las cookie, guardando el identificador de la sesión.
+
+
+
+
+Flask utiliza jinja2 como motor de plantillas, con lo que es muy fácil diseñar las vistas que vamos a mostrar a los usuarios en cada momento.
+
+
+// CREACIÓN DE LA APLICACIÓN WSGI
+
+Todas las peticiones que hagamos a nuestro servidor estarán manejadas por la aplicación WSGI, que será un único fichero. Esta aplicación será la responsable de manejar las peticiones, y de devolver la respuesta adecuada según la URI solicitada. En esta aplicación tendremos que definir una función, que actúe con cada petición del usuario. Esta función, deberá ser una función WSGI aplicación válida. Esto significa que:
+
+Deberá llamarse application.
+Deberá recibir dos parámetros: environ, del módulo os, que provee un diccionario de las peticiones HTTP estándar y otras variables de entorno, y la función start_response, de WSGI, encargada de entregar la respuesta HTTP al usuario.
+
+
+
+// INSTALACIÓN DE FLASK
+
+
+Vamos a realizar la instalación de Flask utilizando la herramienta pip en un entorno virtual creado con virtualenv. La instalación de Flask depende de dos paquetes: Werkzeug, una librería WSGI para Python y jinja2 como motor de plantillas.
+
+Creando el entorno virtual
+Como Flask es compatible con python3 vamos a crear un entorno virtual compatible con la versión 3 del interprete python. Para ello nos aseguremos que tenemos la utilidad instalada:
+
+# apt-get install python-virtualenv
+Y creamos el entorno virtual:
+
+$ virtualenv -p /usr/bin/python3 flask
+Para activar nuestro entorno virtual:
+
+$ source flask/bin/activate
+(flask)$ 
+Y a continuación instalamos Flask:
+
+(flask)$ pip install Flask
+Si nos aparece el siguiente aviso durante la instalación:
+
+WARNING: The C extension could not be compiled, speedups are not enabled.
+Failure information, if any, is above.
+Retrying the build without the C extension now.
+La instalación se realiza bien, pero no se habilita el aumento de rendimiento de jinja2.
+
+Puedes volver a realizar la instalación después de instalar el siguiente paquete:
+
+# apt-get install python3-dev
+Al finalizar podemos comprobar los paquetes python instalados:
+
+(flask)$ pip freeze
+Flask==0.12.2
+Jinja2==2.9.6
+MarkupSafe==1.0
+Werkzeug==0.12.2
+click==6.7
+itsdangerous==0.24
+Podemos guardar las dependencias en un fichero requirements.txt:
+
+# pip freeze > requirements.txt
+La utilización del fichero ˋrequirements.txtˋ, donde vamos a ir guardando los paquetes python (y sus versiones) de nuestra instalación, nos va a posibilitar posteriormente poder crear otro entrono virtual con los mismos paquetes:
+
+# pip install -r requirements.txt
+Y finalmente comprobamos la versión de flask que tenemos instalada:
+
+(flask)$ flask --version
+Flask 0.12.2
+Python 3.4.2 (default, Oct  8 2014, 10:45:20) 
+[GCC 4.9.1]
+
+
+Flask-Bootstrap
+Flask-Script
+Flask-WTF
+Flask-Sqlalchemy
+
+
+// CONSTRUCCIÓN DE RUTAS
+
+Podemos importar la función url_for que nos permite construir rutas a partir del nombre de la función asociada:
+
+python3 manage shell
+
+In [1]: from flask import url_for
+
+In [2]: url_for('articulos')
+Out[2]: '/articulos/'
+
+In [3]: url_for('hola',nombre="pepe")
+Out[3]: '/hello/pepe'
+
+In [4]: url_for('hola',nombre="pepe",edad=40)
+Out[4]: '/hello/pepe/40'
+
+
+
+// FROM FLASK IMPORT REQUEST
+
+request.data Contains the incoming request data as string in case it came with a mimetype Flask does not handle.
+
+request.args: the key/value pairs in the URL query string
+request.form: the key/value pairs in the body, from a HTML post form, or JavaScript request that isn't JSON encoded
+request.files: the files in the body, which Flask keeps separate from form. HTML forms must use enctype=multipart/form-data or files will not be uploaded.
+request.values: combined args and form, preferring args if keys overlap
+request.json: parsed JSON data. The request must have the application/json content type
+request.get_json(force=True) to ignore the content type.
+All of these are MultiDict instances (except for json). You can access values using:
+
+request.form['name']: use indexing if you know the key exists
+request.form.get('name'): use get if the key might not exist
+request.form.getlist('name'): use getlist if the key is sent multiple times and you want a list of values. get only returns the first value.
+
+
+
+// MOTOR DE PLANTILLAS JINJA2
+
+Una plantilla simple
+Veamos un ejemplo para entender como funciona jinja2:
+
+from jinja2 import Template
+
+temp1="Hola {{nombre}}"
+print(Template(temp1).render(nombre="Pepe"))
+La salida es Hola Pepe. La plantilla se compone de una variable {{nombre}} que es sustituida por el valor de la variable nombre al renderizar o generar la plantilla.
+
+Elementos de una plantilla
+Una plantilla puede estar formada por texto, y algunos de los siguientes elementos:
+
+Variables, se indican con {{ ... }}
+Instrucciones, se indican con {% ... %}
+Comentarios, se indican con {# ... #}
+Variables en las plantillas
+Las variables en la plantillas se sustituyen por los valores que se pasan a la plantilla al renderizarlas. Si enviamos una lista o un diccionario puedo acceder los valores de dos maneras:
+
+{{ foo.bar }}
+{{ foo['bar'] }}
+Veamos algunos ejemplos:
+
+temp2='<a href="{{ url }}"> {{ enlace }}</a>'
+print(Template(temp2).render(url="http://www.flask.com",enlace="Flask"))    
+
+temp3='<a href="{{ datos[0] }}"> {{ datos[1] }}</a>'
+print(Template(temp3).render(datos=["http://www.flask.com","Flask"]))    
+
+temp4='<a href="{{ datos.url }}"> {{ datos.enlace }}</a>'
+print(Template(temp4).render(datos={"url":"http://www.flask.com","enlace":"Flask"}))
+El resultado de las tres plantillas es:
+
+<a href="http://www.flask.com"> Flask</a>
+Filtros de variables
+Un filtro me permite modificar una variable. Son distintas funciones que me modifican o calculan valores a partir de las variables, se indican separadas de las variables por | y si tienen parámetros se indican entre paréntesis. Veamos algunos ejemplos:
+
+temp5='Hola {{nombre|striptags|title}}'
+print(Template(temp5).render(nombre="   pepe  "))    
+
+temp6="los datos son {{ lista|join(', ') }}"
+print(Template(temp6).render(lista=["amarillo","verde","rojo"]))    
+
+temp6="El ultimo elemento tiene {{ lista|last|length}} caracteres"
+print(Template(temp6).render(lista=["amarillo","verde","rojo"]))
+Por defecto los caracteres (>, <, &, ") no se escapan, si queremos mostrarlo en nuestra página HTML tenemos que escapar los caracteres:
+
+temp7="La siguiente cadena muestra todos los caracteres: {{ info|e }}"
+print(Template(temp7).render(info="<hola&que&tal>"))
+Y por tanto la salida es:
+
+La siguiente cadena muestra todos los caracteres: &lt;hola&amp;que&amp;tal&gt;
+Para ver todos los filtros accede a la lista de filtros en la documentación.
+
+Instrucciones en las plantillas
+
+for
+Nos permite recorrer una secuencia, veamos un ejemplo sencillo. Es compatible con la sentencia for de python.
+
+temp7='''
+<ul>
+{% for elem in elems -%}
+<li>{{loop.index}} - {{ elem }}</li>
+{% endfor -%}
+</ul>
+'''
+print(Template(temp7).render(elems=["amarillo","verde","rojo"]))
+La salida es:
+
+<ul>
+<li>1 - amarillo</li>
+<li>2 - verde</li>
+<li>3 - rojo</li>
+</ul>
+El - detrás del bloque for evita que se añada una línea en blanco.
+
+En un bloque for tenemos acceso a varias variables, veamos las más interesantes:
+
+loop.index: La iteración actual del bucle (empieza a contar desde 1).
+loop.index0: La iteración actual del bucle (empieza a contar desde 0).
+loop.first: True si estamos en la primera iteración.
+loop.last: True si estamos en la última iteración.
+loop.length: Número de iteraciones del bucle.
+
+if
+Nos permite preguntar por el valor de una variable o si una variable existe. Es compatible con la sentencia if de python.
+
+Ejemplo:
+
+temp9='''
+{% if elems %}
+<ul>
+{% for elem in elems -%}
+    {% if elem is divisibleby 2 -%}
+        <li>{{elem}} es divisible por 2.</li>
+    {% else -%}
+        <li>{{elem}} no es divisible por 2.</li>
+    {% endif -%}
+{% endfor -%}
+</ul>
+{% endif %}
+'''
+print(Template(temp9).render(elems=[1,2,3,4]))
+Y la salida será:
+
+<ul>
+    <li>1 no es divisible por 2.</li>
+    <li>2 es divisible por 2.</li>
+    <li>3 no es divisible por 2.</li>
+    <li>4 es divisible por 2.</li>
+</ul>
+
+
+
+// PLANTILLA BASE BOOTSTRAP
+
+Por ejemplo nuestra primera plantilla quedaría:
+
+{% extends "bootstrap/base.html" %}
+{% block title %}Hola, que tal {{nombre}}{% endblock %}
+{% block content %}
+    <h2>Vamos a saludar</h2>
+    {% if nombre %}
+      <h1>Hola {{nombre|title}}</h1>
+      <p>¿Cómo estás?</p>
+    {%else%}
+      <p>No has indicado un nombre</p>
+    {% endif %}
+{% endblock %}
+
+{% block styles %}
+{{super()}}
+<link rel="stylesheet" href="{{url_for('.static', filename='mystyle.css')}}">
+{% endblock %}
+
+{% block scripts %}
+<script src="{{url_for('.static', filename='myscripts.js')}}"></script>
+{{super()}}
+{% endblock %}
+
+La plantilla base de bootstrap ofrece los siguientes bloques que podemos sobreescribir:
+
+html: Contiene el contenido completo de la etiqueta <html>.
+html_attribs: Atribulos para la etiqueta <html>.
+head: Contiene el contenido completo de la etiqueta <head>.
+body: Contiene el contenido completo de la etiqueta <body>.
+body_attribs: Atribulos para la etiqueta <body>.
+title: Contiene el contenido completo de la etiqueta <title>.
+styles: Contiene todos los estilos CSS de la etiqueta <link>.
+metas: Contiene los <meta> de la cabacera.
+navbar: Un bloque vacío encima del contenido.
+content: Bloque para poner nuestro contenido.
+scripts: Contiene todos los scripts en la etiqueta <script> al final del body.
+
+
+
+//TRABAJANDO CON FORMULARIOS WTF 
+
+En nuestra aplicación tenemos que importar la clase que hemos creado:
+
+from aplicacion.forms import formcalculadora
+Y a continuación podemos crear un objeto a partir de ella:
+
+form = formcalculadora()
+Al crear el formulario podemos inicialzarlos con datos, normalmente con los parámetros recibidos en la vista (request.form):
+
+form = formcalculadora(request.form)    
+El objeto form nos ofrece algunos atributos y métodos para su gestión:
+
+form.validate_on_submit(): Nos permite comprobar si el formulario ha sido enviado y es válido.
+form.data: Nos ofrece un diccionario con los datos del formulario.
+form.errors: Si el formulario no es válido nos devuelve un diccionario con los errores.
+form.num1.data: Para cada campo (en este ejemplo num1)`nos devuelve su valor.
+form.num1.errors: Es una tupla con los errores de validación de el campo determinado.
+form.num1(): Nos devuelve el código HTML para generar este campo.
+form.num1.label(): Nos devuelve el código HTML para general la etiqueta del campo.
+Puedes encontrar más atributos y métodos en la documentación de WTForm.
+
+Seguridad en los formularios
+Por defecto Flask-WTF protege los formularios contra el ataque CSRF (Cross-Site Request Forgery o falsificación de petición en sitios cruzados). Este ataque se produce cuando un sitio web malicioso envía solicitudes a un sitio web en el que está conectada la víctima.
+
+Para implementar la protección CSRF, Flask-WTF necesita que configuremos una clave de cifrado, para generar tokens encriptados que se utilizarán para verificar la autenticidad de la petición. Para ello, en nuestro programa principal:
+
+app.secret_key = 'clave de cifrado lo más robusta posible'
+Cada vez que generemos un formulario se incluirá un campo oculto que contendrá el token cifrado que permitirá verificar que el envió del formulario ha sido lícita. Para generar este campo oculto utilizamos el método form.csrf_token() que mostrará un código HTML parecido a este:
+
+<input id="csrf_token" name="csrf_token" type="hidden" value="IjE5OWRiYmY0MGE2MT...">
+
+
+
+
+
+// INSTALACION LAMP
+
+Vamos a desplegar nuestra aplicación web desarrollada con flask en un servidor LAMP (Linux+Apache2+mysql+python) en un sistema operativo GNU/Linux Ubuntu 16.04.
+
+Configuración del servidor
+Después de actualizar los paquetes del sistema:
+
+$ sudo apt-get update
+$ sudo apt-get upgrade
+Hacemos la instalación del servidor web y del servidor de bases de datos:
+
+$ sudo apt-get install apache2 mysql-server libapache2-mod-wsgi-py3
+Configuración de la base de datos
+Vamos a crear un usuario y una base de datos con la que vamos a a trabajar:
+
+$ mysql -u root -p
+
+mysql> create database tienda;
+mysql> GRANT ALL ON tienda.* TO usuario IDENTIFIED BY 'usuario';
+Además vamos a configurar nuestra aplicación para que trabaje con mysql, para ello en el fichero aplicacion\config.py modificamos el motor de base de datos con el que vamos a trabajar, indicando las credenciales del usuario y la base de datos:
+
+SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://ususario:usuario@localhost/tienda'
+Por último añadimos en el fichero requirements.txt el paquete que me permite que python trabaje con mysql:
+
+...
+PyMySQL==0.7.11
+Despliegue de la aplicación:
+clonamos la rama lamp del repositorio: https://github.com/josedom24/tienda_videojuegos.git, lo hacemos como superusuario en el directorio /var/www/html:
+
+$ sudo su -
+$ cd /var/www/html
+$ git clone https://github.com/josedom24/tienda_videojuegos.git -b lamp
+Como usuario sin privilegios vamos a crear un entorno virtual, donde vamos a instalar las dependencias de nuestra aplicación:
+
+$ sudo apt-get install python-virtualenv
+$ mkdir venv
+$ cd venv/
+~/venv$ virtualenv -p /usr/bin/python3 flask
+~/venv$ source flask/bin/activate
+(flask) ~/venv$ pip install -r /var/www/html/tienda_videojuegos/requirements.txt 
+Creamos las tablas, añadimos los datos de ejemplo y creamos al usuario administrador:
+
+(flask)$ cd /var/www/html/tienda_videojuegos
+(flask)$ python3 manage.py create_tables
+(flask)$ python3 manage.py add_data_tables
+(flask)$ python3 manage.py create_admin
+En el directorio /var/www/html/tienda_viedojuegos hemos creado nuestra aplicación WSGI en el fichero app.wsgi, donde activamos el entorno virtual que hemos creado:
+
+import sys
+sys.path.insert(0, '/var/www/html/tienda_videojuegos')
+activate_this = '/home/ubuntu/venv/flask/bin/activate_this.py'
+with open(activate_this) as file_:
+    exec(file_.read(), dict(__file__=activate_this))    
+
+from aplicacion.app import app as application    
+Por último configuramos apache2 modificando el virtualhost del fichero ˋ/etc/apache2/sites-available/000-default.confˋ:
+
+...
+DocumentRoot /var/www/html/tienda_videojuegos/aplicacion
+WSGIDaemonProcess tienda user=www-data group=www-data threads=5
+WSGIScriptAlias / /var/www/html/tienda_videojuegos/app.wsgi
+
+<Directory /var/www/html/tienda_videojuegos/aplicacion>
+    WSGIProcessGroup tienda
+    WSGIApplicationGroup %{GLOBAL}
+    Require all granted
+</Directory>
+...
+Donde definimos el proceso WSGI con la directiva WSGIDaemonProcess e indicamos el fichero donde se encuentra la aplicación WSGI con la directiva WSGISrctiptAlias, además de dar los permisos de acceso necesarios.
+
+Terminamos reiniciando el servidor:
+
+$ sudo systemctl restart apache2
+
+
+
+//  PYTHONANYWHERE
+
+Configuración de la base de datos
+PythonAnywhere nos da la posibilidad de trabajar con mysql y con postgres. En nuestro caso en la pestaña Databases del dashboard, vamos a crear una base de datos mysql con una base de datos: josedom24$tienda:
+
+Por lo tanto tendremos que configurar nuestra aplicación, para indicar la nuevas credenciales de la base de datos, para ello modificamos el fichero confi.py:
+
+SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://josedom24:usuario1234@josedom24.mysql.pythonanywhere-services.com/josedom24$tienda'
+Configuración de nuestra aplicación
+En este ejemplo vamos a modificar el fichero app.wsgi para indicar el directorio de trabajo, además no vamos activar el entrono virtual:
+
+import sys
+sys.path.insert(0, '/home/josedom24/tienda_videojuegos')
+from aplicacion.app import app as application
+Despliegue de nuestra aplicación
+En la pestaña Consoles de PythonAnywhere podemos abrir consolas con los distintos interpretes python, con bash o con mysql, vamos a abrir una consola bash para comenzar el despliegue:
+
+Vamos a clonar nuestro repositorio, crear un repositorio e instalar las dependencias:
+
+$ git clone https://github.com/josedom24/tienda_videojuegos.git -b pythonanywhere
+$ mkvirtualenv --python=/usr/bin/python3.4 flask
+$ workon flask
+(flask)$ pip install -r tienda_videojuegos/requirements.txt
+A continuación podemos crear las tablas, cargar los datos de ejemplo y crear el administrador:
+
+(flask)$ cd tienda_videojuegos
+(flask)$ python3 manage.py create_tables
+(flask)$ python3 manage.py add_data_tables
+(flask)$ python3 manage.py create_admin
+Nota: Si queremos modificar cualquier fichero de nuestro proyecto lo podemos hacer desde la pestaña Files.
+
+Creando una nueva aplicación
+Por último en la pestaña Web tenemos que crear una nueva aplicación:
+
+Elegimos la opción “Manual configuration” para poder indicar el entorno virtual que hemos creado:
+
+
+
+
+// HEROKU
+
+En esta unidad vamos a desplegar nuestra aplicación web desarrollada en python utilizando el framework flask utilizando sólo la aplicación web Heroku (Heroku Dashboard) (no vamos a utilizar el comando heroku-cli).
+
+Heroku es una aplicación que nos ofrece un servicio de Cloud Computing PaaS (Plataforma como servicio). Como leemos en la Wikipedia es propiedad de Salesforce.com y es una de las primeras plataformas de computación en la nube, que fue desarrollada desde junio de 2007, con el objetivo de soportar solamente el lenguaje de programación Ruby, pero posteriormente se ha extendido el soporte a Java, Node.js, Scala, Clojure y Python y PHP. La funcionalidad ofrecida por heroku esta disponible con el uso de dynos, que son una adaptación de los contenedores Linux y nos ofrecen la capacidad de computo dentro de la plataforma.
+
+Vamos a utilizar la capa gratuita de Horoku:
+
+Podemos crear un dyno, que puede ejecutar un máximo de dos tipos de procesos.
+Nuestro dyno utiliza 512 Mb de RAM
+Tras 30 minutos de inactividad el dyno se para (sleep), además debe estar parado 6 horas cada 24 horas.
+Podemos utilizar una base de datos postgreSQL con no más de 10.000 registros
+Para más información: planes ofrecido por heroku
+Preparativos previos
+Tenemos que crear una cuenta gratuita en Heroku (singup)
+En el repositorio github de nuestra aplicación hemos creado un nuevo fichero:
+Procfile: En este fichero se define el proceso que va a ejecutar el dyno. Para más información: Process Types and the Procfile
+
+El archivo requirements.txt
+Si no lo creaste antes, necesitamos crear un archivo requirements.txt para decirle a Heroku que paquetes de Python necesitamos que sean instalados en nuestro servidor.
+
+Procfile
+Otra cosa que Heroku necesita es un Procfile. Esto le dice a Heroku que comandos ejecutar para iniciar nuestro sitio web. Ve a tu editor de código y crea un archivo llamado Procfile en la carpeta djangogirls 
+
+
+
+// DOCKER
+
+
+Contenedor de base de datos
+Vamos a arrancar un contenedor que nos sirva la base de datos, indicamos la contraseña del usuario root y creamos una base de datos:
+
+sudo docker run --name servidor_mysql -e MYSQL_DATABASE=tienda -e MYSQL_ROOT_PASSWORD=asdasd -d mysql
+En al configuración de la conexión a la base de datos de nuestra aplicación, en el fichero config.py tendremos que indicar los parámetros de conexión y la contraseña del root de mysql que vamos a mandar cunado creemos el contenedor, de la siguiente manera:
+
+SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:{}@{}/tienda'.format(os.environ["MYSQL_PASSWORD"],os.environ["MYSQL_PORT_3306_TCP_ADDR"])
+Creando la imagen para el contenedor de nuestra aplicación
+Clonamos la rama docker del repositorio github donde tenemos los ficheros de nuestra aplicación:
+
+$ git clone https://github.com/josedom24/tienda_videojuegos.git -b docker
+En el repositorio tenemos un fichero Dockerfile donde definimos las instrucciones que vamos a ejecutar para crear la imagen docker:
+
+FROM ubuntu:16.04
+MAINTAINER José Domingo Muñoz
+RUN apt-get update -y && apt-get install -y \
+        apache2 \
+        libapache2-mod-wsgi-py3 \
+        python3-pip \
+        && apt-get clean && rm -rf /var/lib/apt/lists/*
+ADD /tienda_videojuegos /var/www/html/tienda_videojuegos
+RUN chown www-data:www-data -R /var/www/html/tienda_videojuegos
+RUN pip3 install -r /var/www/html/tienda_videojuegos/requirements.txt
+ADD 000-default.conf /etc/apache2/sites-available/
+ADD app.wsgi /var/www/html/tienda_videojuegos
+RUN service apache2 restart
+ENV APACHE_RUN_USER www-data
+ENV APACHE_RUN_GROUP www-data
+ENV APACHE_LOG_DIR /var/log/apache2
+EXPOSE 80
+WORKDIR /var/www/html/tienda_videojuegos
+COPY ./run.sh /
+ENTRYPOINT ["/run.sh"]
+También tenemos el fichero donde creamos la aplicación WSGI, app.wsgi:
+
+import sys
+sys.path.insert(0, '/var/www/html/tienda_videojuegos')
+from aplicacion.app import app as application
+El fichero de configuración del virtualhost de apache2: 000-default.conf:
+
+...
+DocumentRoot /var/www/html/tienda_videojuegos/aplicacion
+WSGIDaemonProcess tienda user=www-data group=www-data threads=5
+WSGIScriptAlias / /var/www/html/tienda_videojuegos/app.wsgi
+
+<Directory /var/www/html/tienda_videojuegos/aplicacion>
+    WSGIProcessGroup tienda
+    WSGIApplicationGroup %{GLOBAL}
+    Require all granted
+</Directory>
+...
+Y por último el fichero run.sh que el script que se va a ejecutar cuando creemos el contenedor:
+
+#!/bin/bash
+python3 manage.py create_tables
+python3 manage.py add_data_tables
+/usr/sbin/apache2ctl -D FOREGROUND
+Creamos las tablas con los datos de ejemplo de la base de datos y ejecutamos el servidor apache2.
+
+Para crear la imagen ejecutamos el siguiente comando:
+
+$ cd tienda_videojuegos
+$ sudo docker build -t tienda .
+Y comprobamos que hemos generado la nueva imagen:
+
+$ sudo docker image ls
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+tienda              latest              bb1d87c90448        46 hours ago        474MB
+ubuntu              16.04               ccc7a11d65b1        11 days ago         120MB
+mysql               latest              c73c7527c03a        3 weeks ago         412MB
+Contenedor con nuestra aplicación
+Para crear el contenedor con nuestra aplicación:
+
+$ sudo docker run --name mytienda -e MYSQL_PASSWORD=asdasd -p 8080:80 --link servidor_mysql:mysql -d tienda
+Comprobamos que los contenedores se están ejecutando:
+
+$ sudo docker ls
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                  NAMES
+08eadf7d87b0        tienda              "/run.sh"                4 seconds ago       Up 3 seconds        0.0.0.0:8080->80/tcp   mytienda
+6ccff57702ba        mysql               "docker-entrypoint..."   16 seconds ago      Up 16 seconds       3306/tcp               servidor_mysql
+Si queremos crear el usuario administrador de nuestra aplicación podemos acceder de forma interactiva a nuestro contenedor para ejecutar la instrucción necesaria:
+
+$ sudo docker exec -i -t mytienda /bin/bash    
+root@5db96abf79b3:/var/www/html/tienda_videojuegos# python3 manage.py create_admin
+Por ultimo comprobamos que la aplicación está funcionando accediendo a la ip del servidor y al puerto 8080:
+
+
+
+
+
+
+
+
+
+

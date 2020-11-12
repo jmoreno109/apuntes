@@ -1,0 +1,90 @@
+
+
+->
+*****************************************
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+
+
+***************************
+->web.xml JSF
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://java.sun.com/xml/ns/javaee" 
+        xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee 
+	http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	id="WebApp_ID" version="2.5">
+ 
+	<display-name>JavaServerFaces</display-name>
+ 
+	<!-- Change to "Production" when you are ready to deploy -->
+	<context-param>
+		<param-name>javax.faces.PROJECT_STAGE</param-name>
+		<param-value>Development</param-value>
+	</context-param>
+ 
+	<!-- Welcome page -->
+	<welcome-file-list>
+		<welcome-file>faces/hello.xhtml</welcome-file>
+	</welcome-file-list>
+ 
+	<!-- JSF mapping -->
+	<servlet>
+		<servlet-name>Faces Servlet</servlet-name>
+		<servlet-class>javax.faces.webapp.FacesServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+ 
+	<!-- Map these files with JSF -->
+	<servlet-mapping>
+		<servlet-name>Faces Servlet</servlet-name>
+		<url-pattern>/faces/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>Faces Servlet</servlet-name>
+		<url-pattern>*.jsf</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>Faces Servlet</servlet-name>
+		<url-pattern>*.faces</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>Faces Servlet</servlet-name>
+		<url-pattern>*.xhtml</url-pattern>
+	</servlet-mapping>
+ 
+</web-app>
+
+
+*******************************
+
+
+-> cargar un archivo
+
+<h:outputLabel value="#{msg.contract_file_upload}"
+	for="fileUploadItem" />
+	
+<rich:fileUpload id="fileUploadItem" addControlLabel="Agregar"
+	clearAllControlLabel="Borrar Todo" clearControlLabel="Borrar"
+	fileUploadListener="#{uploadProtectionManagedBean.uploadProtectionListener}"
+	maxFilesQuantity="1" styleClass="fileUploadStyle"
+	acceptedTypes="csv" immediateUpload="true" required="true">
+	<a4j:support event="onclear" ajaxSingle="true"
+		reRender="fileUploadItem"></a4j:support>
+</rich:fileUpload>
+
+<rich:message for="fileUploadItem">
+	<f:facet name="passedMarker">
+		<h:graphicImage value="#{src.accept_image}" />
+	</f:facet>
+	<f:facet name="errorMarker">
+		<h:graphicImage value="#{src.error_image}" />
+	</f:facet>
+</rich:message>

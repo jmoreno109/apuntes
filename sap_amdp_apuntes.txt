@@ -1,0 +1,476 @@
+CLASS zcl_sd_cub_remis_pend_amdp DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+    INTERFACES  if_amdp_marker_hdb.
+
+    types: begin of lty_lips_data,
+                vbeln type VBELN_VL,
+                posnr type POSNR_VL,
+          end of lty_lips_data.
+
+    types: ltty_lips_data type HASHED TABLE OF lty_lips_data
+                          WITH UNIQUE KEY vbeln posnr .
+
+    CLASS-METHODS get_data  IMPORTING VALUE(i_mandt)        TYPE mandt
+                                      value(i_erdat_ini)    TYPE ERDAT
+                                      value(i_erdat_fin)    TYPE ERDAT
+                                      value(i_filter)       TYPE string
+                            EXPORTING value(e_result)       TYPE ZTT_SD_REMIS_PEND_CUMPL
+                                      value(e_lips_data)    TYPE ltty_lips_data .
+
+    METHODS change_data IMPORTING it_lips  TYPE HASHED TABLE
+                        CHANGING ct_result TYPE ZTT_SD_REMIS_PEND_CUMPL.
+
+  PROTECTED SECTION.
+  PRIVATE SECTION.
+*    data: lt_vlr_ttl   TYPE ZTT_VLR_MCIA_GRP,
+*          lt_rpt2_tmp  TYPE ZTT_SD_REMIS_PEND_CUMPL,
+*          lt_transp_key TYPE ZTT_TRANSPORTE_KEY.
+
+ENDCLASS.
+
+
+
+CLASS zcl_sd_cub_remis_pend_amdp IMPLEMENTATION.
+
+    METHOD change_data.
+
+    CONSTANTS: lc_if_object     TYPE tsegobjhdr                 VALUE 'WSHDRLIKP',
+               lc_diag_view     TYPE tsegtemplv                 VALUE 'STD',
+               lc_par_cl_transp TYPE ztsd_cub_rep_cnf-parametro VALUE 'CL_TRANSP',
+               lc_0003          TYPE thead-tdid                 VALUE '0003',
+               lc_obj_vbbp      TYPE thead-tdobject             VALUE 'VBBP'.
+
+        data: lo_fechas_entrega TYPE REF TO zcl_sd_cub_fechas_entrega,
+              lv_vbeln_date     TYPE string,
+              lti_lips          TYPE ltty_lips_data,
+              lv_name_text      TYPE thead-tdname,
+              lt_lines_text      TYPE TABLE OF tline.
+
+        INSERT LINES OF it_lips into table lti_lips.
+
+        loop at ct_result ASSIGNING FIELD-SYMBOL(<lfs_data>).
+**            clear <lfs_data>-fecha_cumplido, lv_vbeln_date.
+            lo_fechas_entrega = NEW zcl_sd_cub_fechas_entrega( im_va_vbeln = <lfs_data>-entrega  ).
+            clear lv_vbeln_date.
+
+            lo_fechas_entrega->get_dates_for_delivery( IMPORTING ex_va_time_tst04 = lv_vbeln_date ).
+            <lfs_data>-fecha_cumplido = lv_vbeln_date.
+
+            READ TABLE lti_lips into data(ls_lips)
+            WITH KEY vbeln = <lfs_data>-entrega.
+
+            if sy-subrc is initial.
+
+                lv_name_text = ls_lips-vbeln && ls_lips-posnr.
+
+                CALL FUNCTION 'READ_TEXT'
+                EXPORTING
+                    id                      = lc_0003
+                    language                = sy-langu
+                    name                    = lv_name_text
+                    object                  = lc_obj_vbbp
+                TABLES
+                    lines                   = lt_lines_text
+                EXCEPTIONS
+                    id                      = 1
+                    language                = 2
+                    name                    = 3
+                    not_found               = 4
+                    object                  = 5
+                    reference_check         = 6
+                    wrong_access_to_archive = 7
+                    OTHERS                  = 8.
+
+
+                READ TABLE lt_lines_text INTO DATA(ls_lines_text) INDEX 1.
+                IF sy-subrc = 0.
+                    <lfs_data>-fecha_cumplido = ls_lines_text-tdline.
+                ENDIF.
+
+            endif.
+        endloop.
+    ENDMETHOD.
+
+    METHOD get_data BY DATABASE PROCEDURE FOR HDB LANGUAGE SQLSCRIPT OPTIONS READ-ONLY
+                    USING vttk vttp vfkn ztmm_vttk_aux lips
+                          zcl_sd_cubicaje_amdp=>get_vlr_mcia_grp_te.
+
+        declare lv_curr nvarchar( 5 );
+
+        lt_rpt2_tmp = (
+            select vttk.tknum as transporte,
+                   vttp.vbeln as entrega,
+                   vttk.dalen as fecha,
+                   0 as fecha_cumplido,
+                   aux.orden_carga as o_cargue,
+                   0 as neto_facturado,
+                   ifnull(sum(vfkn.netwr),0) as flete_factura,
+                   0 as waers
+            from vttk as vttk
+            inner join vttp on vttp.mandt = vttk.mandt and
+                               vttp.tknum = vttk.tknum
+            inner join  ztmm_vttk_aux as aux on aux.mandt = vttk.mandt and
+                                                aux.tknum = vttk.tknum
+            left outer join vfkn on vfkn.mandt = vttp.mandt and
+                                    vfkn.rebel = vttp.vbeln
+            where vttk.mandt = :i_mandt and
+                  vttk.erdat between :i_erdat_ini and :i_erdat_fin
+            group by vttk.tknum, vttp.vbeln, vttk.dalen, aux.orden_carga
+            order by vttk.tknum, vttp.vbeln );
+
+        lt_transp_key = ( select distinct transporte as tknum from :lt_rpt2_tmp );
+
+        call "ZCL_SD_CUBICAJE_AMDP=>GET_VLR_MCIA_GRP_TE" ( i_mandt     => :i_mandt,
+                                                           i_tknum_key => :lt_transp_key,
+                                                           e_grp_data  => :lt_vlr_ttl,
+                                                           e_curr      => :lv_curr );
+
+        e_result = ( select t.transporte,
+                            t.entrega, t.fecha,
+                            t.fecha_cumplido,
+                            t.o_cargue,
+                            v.vlrttotal_mercancia as neto_facturado,
+                            t.flete_factura,
+                            v.waerk  as waers
+                      from :lt_rpt2_tmp as t
+                      inner join :lt_vlr_ttl as v on v.tknum = t.transporte and
+                                                     v.vbeln = t.entrega );
+
+        e_lips_data = select distinct vbeln, posnr
+                      from lips
+                      where vbeln in (select entrega from :e_result);
+    ENDMETHOD.
+ENDCLASS.
+
+
+
+
+******************************************************************************************************
+******************************************************************************************************
+******************************************************************************************************
+
+
+// if_oo_adt_classrun~main. // metodo para test
+
+
+class zcl_amdp_test definition
+  public
+  final
+  create public .
+
+  public section.
+
+    types: tt_t001 type table of t001.
+
+    interfaces: if_amdp_marker_hdb,if_oo_adt_classrun.
+
+    methods:
+
+      get_data
+        exporting value(et_t001) type tt_t001
+        raising   cx_amdp_execution_error.
+
+  protected section.
+  private section.
+endclass.
+
+
+
+class zcl_amdp_test implementation.
+
+  method get_data 
+	by database 
+	procedure for hdb 
+	language sqlscript 
+	options read-only
+	using t001.
+
+    et_t001 = select * from t001;
+
+  endmethod.
+
+
+
+  method if_oo_adt_classrun~main.
+
+    try.
+        me->get_data(
+            importing et_t001 = data(lt_result) ).
+
+      catch cx_amdp_execution_error into data(lx_amdp).
+        out->write( lx_amdp->get_longtext( ) ).
+    endtry.
+
+    out->write( lt_result ).
+
+
+
+  endmethod.
+
+endclass.
+
+
+******************************************************************************************************
+******************************************************************************************************
+******************************************************************************************************
+
+
+  METHOD get_data_amdp.
+
+    CALL METHOD cl_shdb_seltab=>combine_seltabs
+      EXPORTING
+        it_named_seltabs = VALUE #( ( name = 'TKNUM' dref = REF #( im_it_tknum ) )
+                                    ( name = 'ERDAT' dref = REF #( im_it_erdat ) ) )
+        iv_client_field  = 'MANDT'
+      RECEIVING
+        rv_where         = DATA(lv_where).
+
+    CALL METHOD zcl_sd_basc_pesaje_vehcls_amdp=>get_data
+      EXPORTING
+        im_va_mandt     = sy-mandt
+        im_va_langu     = sy-langu
+        im_va_where     = lv_where
+      IMPORTING
+        ex_it_data      = ex_it_data.
+
+  ENDMETHOD.
+  
+
+
+    CLASS-METHODS:
+      get_data IMPORTING VALUE(im_va_mandt)     TYPE mandt
+                         VALUE(im_va_langu)     TYPE sy-langu
+                         VALUE(im_va_where)     TYPE string
+               EXPORTING VALUE(ex_it_data)      TYPE ztt_mm_bascula_pesaje_camiones.
+			   
+
+CLASS zcl_sd_basc_pesaje_vehcls_amdp IMPLEMENTATION.
+
+  METHOD get_data BY DATABASE PROCEDURE FOR HDB LANGUAGE SQLSCRIPT
+                  OPTIONS READ-ONLY
+                  USING vttk
+                        ztmm_vttk_aux
+                        tvtkt.
+
+    lt_vttk = APPLY_FILTER( vttk, :im_va_where);
+
+    ex_it_data  = SELECT vk.tknum, vk.erdat, vk.signi,
+                         au.destino AS dest_text,
+                         vk.tpbez, vk.exti1,  vk.dtdis, vk.uzdis,
+                         au.peso_entrada, vk.dtmeg, au.pesador_ingreso,
+                         vk.daten, vk.uaten, au.peso_salida, au.pesador_salida,
+                         ( au.peso_entrada - au.peso_salida ) as diferencia_peso,
+                         au.orden_carga, au.orden_salida,
+                         au.peso_neto_sal, au.diferencia_var,
+                         vk.shtyp, tvt.bezei AS activ_text
+                  FROM :lt_vttk AS vk
+                  INNER JOIN ztmm_vttk_aux AS au
+                  ON  au.mandt    = :im_va_mandt
+                  AND vk.tknum    = au.tknum
+                  LEFT OUTER JOIN tvtkt  AS tvt
+                  ON  tvt.mandt   = :im_va_mandt
+                  AND vk.shtyp    = tvt.shtyp
+                  AND tvt.spras   = :im_va_langu;
+
+  ENDMETHOD.
+
+ENDCLASS.  
+
+
+******************************************************************************************************
+******************************************************************************************************
+******************************************************************************************************
+
+
+@EndUserText.label : 'Bascula: Reporte de Pesaje de Camiones'
+@AbapCatalog.enhancementCategory : #NOT_CLASSIFIED
+define structure zes_mm_bascula_pesaje_camiones {
+  tknum           : tknum;
+  erdat           : erdat;
+  signi           : signi;
+  dest_text       : zed_mm_destino;
+  tpbez           : zed_mm_conductor;
+  exti1           : exti1;
+  dtdis           : dtdis;
+  uzdis           : uzdis;
+  @Semantics.quantity.unitOfMeasure : 'zes_mm_bascula_pesaje_camiones.dtmeg'
+  peso_entrada    : zed_mm_peso_entrada;
+  dtmeg           : dtmeg;
+  pesador_ingreso : zed_mm_nombre_pesador;
+  daten           : datend;
+  uaten           : uatend;
+  @Semantics.quantity.unitOfMeasure : 'zes_mm_bascula_pesaje_camiones.dtmeg'
+  peso_salida     : zed_mm_peso_salida;
+  pesador_salida  : zed_mm_nombre_pesador;
+  @Semantics.quantity.unitOfMeasure : 'zes_mm_bascula_pesaje_camiones.dtmeg'
+  diferencia_peso : zed_mm_diferencia_peso;
+  orden_carga     : ze_mm_orden_carga;
+  orden_salida    : ze_mm_orden_salida;
+  @Semantics.quantity.unitOfMeasure : 'zes_mm_bascula_pesaje_camiones.dtmeg'
+  peso_neto_sal   : ze_mm_peso_neto_sal;
+  @Semantics.quantity.unitOfMeasure : 'zes_mm_bascula_pesaje_camiones.dtmeg'
+  diferencia_var  : ze_mm_diferencia_var;
+  shtyp           : shtyp;
+  activ_text      : bezei20;
+
+}
+
+
+******************************************************************************************************
+******************************************************************************************************
+******************************************************************************************************
+
+
+
+class zcl_sd_liq_comis_amdp definition
+  public
+  final
+  create public .
+
+  public section.
+
+    interfaces: if_amdp_marker_hdb,if_oo_adt_classrun.
+
+    class-methods:
+
+      get_facturas
+        importing value(i_mandt)        type mandt
+                  value(i_bukrs)        type bukrs
+                  value(i_gjahr)        type gjahr
+                  value(i_blart)        type blart
+                  value(i_spras)        type spras
+                  value(i_vkorg)        type vkorg
+                  value(i_parvw)        type parvw
+                  value(i_fkart)        type fkart
+                  value(i_filter_date)  type string
+                  value(i_filter_vbeln) type string
+                  value(i_filter_pernr) type string
+                  value(i_fecha_ini)    type datum
+                  value(i_fecha_fin)    type datum
+        exporting value(et_result)      type ztt_liq_com
+                  value(et_par_liq_com) type ztt_par_liq_com
+                  value(et_bsad)        type fm_bsad_tab
+                  value(et_pa0000)      type hrpad00_t_pa0000
+                  value(et_vbfa)        type vbfa_t.
+  protected section.
+  private section.
+endclass.
+
+class zcl_sd_liq_comis_amdp implementation.
+
+  method get_facturas
+  by database procedure
+  for hdb
+  language sqlscript
+  options read-only
+  using vbap lips vbrp vbrk mara makt but000 bkpf bsad tvm1t tvfk tvfkt vbpa ztsd_par_liq_com pa0000 vbfa.
+
+    et_result = select distinct vbpa.pernr,
+    vbpa.knref,vbrk.kunrg,but000.name_org1,
+    vbrp.aubel,vbrk.vbeln,vbrp.posnr,
+    bsad.augbl,vbrk.fkart,tvfkt.vtext,
+    vbrk.fkdat,vbrk.erdat,vbrp.mvgr1,
+    tvm1t.bezei,vbrp.matnr,makt.maktx,
+    vbrp.waerk,vbrp.netwr,vbrp.mwsbp,
+    0 as valor_nc,0 as base_liq,
+    0 as dias_r_pago,0 as porcen_liq,
+    0 as valor_comis,'' as fecha_ult_pago,
+    ( select max(bsad_in.budat) from bsad as bsad_in where bsad_in.augbl=bsad.augbl ) as fecha_compens,
+    :i_fecha_ini as fecha_ini_liq,:i_fecha_fin as fecha_fin_liq,'' as is_liquidada,
+    vbrk.bukrs as bukrs
+    from  vbap
+    inner join lips on (vbap.mandt=lips.mandt and vbap.vbeln=lips.vgbel and vbap.posnr=lips.vgpos)
+    inner join vbrp on (lips.mandt=vbrp.mandt and lips.vbeln=vbrp.vgbel and lips.posnr=vbrp.vgpos)
+    inner join vbrk on (vbrp.mandt=vbrk.mandt and vbrp.vbeln=vbrk.vbeln)
+    inner join mara on (vbrp.mandt=mara.mandt and vbrp.matnr=mara.matnr)
+    inner join makt on (mara.mandt=makt.mandt and mara.matnr=makt.matnr)
+    inner join but000 on (vbrk.mandt=but000.client and vbrk.kunrg=but000.partner)
+    inner join bkpf on (vbrk.mandt=bkpf.mandt and vbrk.vbeln=bkpf.awkey and vbrk.gjahr=bkpf.gjahr and vbrk.bukrs=bkpf.bukrs)
+    inner join bsad on (bkpf.mandt=bsad.mandt and bkpf.belnr=bsad.belnr and bkpf.bukrs=bsad.bukrs and bkpf.gjahr=bsad.gjahr)
+    inner join tvm1t on(vbrp.mandt=tvm1t.mandt and vbrp.mvgr1=tvm1t.mvgr1)
+    inner join tvfk on (vbrk.mandt=tvfk.mandt and vbrk.fkart=tvfk.fkart)
+    inner join tvfkt on (tvfk.mandt=tvfkt.mandt and tvfk.fkart=tvfkt.fkart)
+    inner join vbpa on (vbap.mandt=vbpa.mandt and vbap.vbeln=vbpa.vbeln)
+    where bkpf.mandt = :i_mandt
+    and bkpf.bukrs=:i_bukrs
+    and bkpf.gjahr=:i_gjahr
+    and bkpf.blart=:i_blart
+    and tvm1t.spras=:i_spras
+    and vbrk.vkorg=:i_vkorg
+    and tvfkt.spras=:i_spras
+    and vbpa.parvw=:i_parvw
+    and vbrk.fkart=:i_fkart
+    order by vbrk.vbeln,vbrp.posnr asc;
+
+    et_result = APPLY_FILTER(:et_result, :i_filter_date);
+
+    if i_filter_vbeln != '' then
+        et_result = APPLY_FILTER(:et_result, :i_filter_vbeln);
+    end if;
+
+    if i_filter_pernr != '' then
+        et_result = APPLY_FILTER(:et_result, :i_filter_pernr);
+    end if;
+
+    et_par_liq_com = select tipo_comision,sociedad,sdv_financiera,cliente,
+    rango_inf,rango_sup,porcen_liq,fech_vig_ini,fech_vig_fin,fech_ult_mod,
+    hora_ult_mod,usuario_mod,reg_activo,tipo_creacion
+    from ztsd_par_liq_com where mandt = :i_mandt and reg_activo = 'X';
+
+    et_bsad = select * from bsad where mandt=:i_mandt
+    and augbl in ( select distinct augbl from :et_result );
+
+    et_pa0000 = select * from pa0000 where mandt=:i_mandt
+    and pernr in ( select pernr from :et_result );
+
+    et_vbfa = select distinct * from vbfa where mandt=:i_mandt and vbtyp_v = 'M'
+    and vbeln in ( select vbeln from vbrk where fkart in ('ZCT2','ZCT3')
+    and vbeln in ( select zuonr from :et_bsad ) );
+
+  endmethod.
+
+  method if_oo_adt_classrun~main.
+
+    try.
+
+        data(lv_filter_date) = | fecha_compens >= '20190101'  and fecha_compens <= '20191231' |.
+        data(lv_filter_vbeln) = | vbeln = '0001206672' |.
+        data(lv_filter_pernr) = ||.
+
+        me->get_facturas(
+          exporting
+            i_mandt ='201'
+            i_bukrs ='CO01'
+            i_gjahr ='2019'
+            i_blart ='RV'
+            i_spras ='S'
+            i_vkorg ='C100'
+            i_parvw ='VE'
+            i_fkart ='ZCT1'
+            i_filter_date = lv_filter_date
+            i_filter_vbeln = lv_filter_vbeln
+            i_filter_pernr = lv_filter_pernr
+            i_fecha_ini = '20190101'
+            i_fecha_fin = '20191231'
+          importing
+            et_result =  data(et_result)
+            et_par_liq_com =  data(et_par_liq_com) ).
+
+      catch cx_amdp_execution_error into data(lx_amdp).
+        out->write( lx_amdp->get_longtext( ) ).
+    endtry.
+
+    out->write( et_result ).
+
+
+  endmethod.
+
+endclass.
+
+
+
+

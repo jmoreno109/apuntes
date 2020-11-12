@@ -1,0 +1,26 @@
+
+¿Qué es Jenkins?
+Servicio de automatización
+Código abierto (Java)
+Empleado para:
+Acelerar el desarrollo de software
+(mediante) Automatización del proceso de vida de implementación del proyecto
+creación (dado unas plantillas crear un proyecto nuevo listo para desarrollar)
+prueba
+entrega
+Jenkins se puede instalar a través de:
+
+Paquetes del sistema nativo
+Docker
+Java Runtime Environment (JRE)/WAR
+Ventajas
+
+Es una herramienta open source con muchísima comunidad
+Es sencilla su instalación
+Hay miles de plugins para facilitar el trabajo. Si el plugin no existe lo puedes codificar y compartirlo con la comunidad
+CURIOSIDAD: Google -> how many plugins jenkins have
+https://plugins.jenkins.io
+Es gratuito
+Licencia MIT y Creative Commons
+Está hecho en Java
+Más información en ‘jenkins.io/doc’

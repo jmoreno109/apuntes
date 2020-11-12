@@ -1,0 +1,6 @@
+
+--> web service login
+http://localhost:8080/jasperserver-pro/rest_v2/login?j_username=jasperadmin&j_password=jasperadmin
+
+--> web service para llamar reportes(rest_v2/reports/)
+http://localhost:8080/jasperserver-pro/rest_v2/reports/public/Samples/Reports/Cities.html

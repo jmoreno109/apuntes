@@ -1,0 +1,13 @@
+
+
+
+switch -> switch #( sy-langu when 'S' then 'ES' else 'NA' ).
+
+reduce -> reduce #( init x type i for wa in gt_table where ( field1 = 'CO' ) next x = x + wa-field2 ).
+
+for -> value tt_citys( for ls_cust in t_customres where ( route = 'R0001' ) ( ls_cust-city ) ). " types: tt_citys type standard table of char30 with empty key.
+
+xsdbool -> xsdbool( line_exists( t_bsad[ blart = 'DZ' ] ) ).
+
+
+

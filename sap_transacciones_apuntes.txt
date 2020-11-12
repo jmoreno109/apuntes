@@ -1,0 +1,19 @@
+
+
+ob58 - estructuras de balance (Financial Statement Version C FI Maintain Table T011/T011T)
+ar01 - patrimonio de activos fijos (Asset balance Report)
+ao90 - visualizar vista plan de cuentas (Account assignmt Acquisitions)
+FSE2/FSE3 - visualizar estructuras de balance (to change/display Financial Statement Version)
+
+
+
+MMBE - Stock Overview:company code/plant/storage location/batch
+migo - Goods Movement 
+ME2M - Purchase Orders by Material
+mb25 - Lista de reservas gestión de stocks
+LM01 - Dynamic Menu,RF selection menu for the different transactions
+mb52 - visualizar stocks en almacen por material (display warehouse stocks of material)
+
+OS01 - ping servers/verificacion
+DBCO - descripcion enlaces de bases de datos
+ADBC_TEST_CONNECTION - programa verificar conexiones a bases de datos

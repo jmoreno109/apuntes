@@ -1,0 +1,206 @@
+
+
+
+select * 
+from information_schema.columns 
+where table_name = 'Tablero_Produccion'
+order by ordinal_position;
+
+**************************************************************
+
+
+exec TableroProduccion
+@fecha_contabilizacion="20191003", 
+@hora_confirmacion="092018", 
+@definicion_turno="T12", 
+@centro="GP01", 
+@clase_orden="MFPE", 
+@puesto_notificacion="PSES", 
+@codigo_notificacion="0060", 
+@emplazamiento="LINEA_06", 
+@peso_real="0.000", 
+@peso_estandar="0.000", 
+@sobrepeso="0.000", 
+@codigoscrap="000000000000300079", 
+@descripcion="BLANCO EXT. P/RECUPERAR - PU-PP", 
+@cantidad="5.750", 
+@unidad_medida="KG", 
+@almacen="0109", 
+@grupo_articulos="ZA1007", 
+@sobrepesonegativo="0.000"
+;
+
+
+**************************************************************
+
+CREATE PROCEDURE [dbo].[spBasculaCapturaPeso] 
+	-- Add the parameters for the stored procedure here
+	(
+		 @IP NVARCHAR(20)	
+		,@PUERTO NVARCHAR(20)
+		,@CODEERROR NVARCHAR(20)
+		,@DESCERROR NVARCHAR(100)
+		,@PESONETO NVARCHAR(20)
+		,@MATERIAL NVARCHAR(20)
+		,@PESOBRUTO NVARCHAR(20)
+		,@PESOTARA NVARCHAR(20)
+		,@BASCULA NVARCHAR(20)
+		,@CANTIDAD INT
+	)
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.	
+	SET NOCOUNT ON;
+	DECLARE @PesoBrutoUnidadDec DECIMAL(19,3),@PesoNetoDec DECIMAL(19,3),@ValorTotalDec DECIMAL(19,3),@PesoTaraDec DECIMAL(19,3)
+			,@PesoNetoPromDec DECIMAL(19,3)
+	DECLARE @PesoBrutoUnidadFloat FLOAT,@PesoNetoFloat FLOAT,@ValorTotalFloat FLOAT,@PesoTaraFloat FLOAT,@PesoNetoPromFloat FLOAT
+	DECLARE @Resultado INT
+	BEGIN TRAN
+		BEGIN TRY			
+			-- SE CONVIERTE LOS DATOS EN FLOAT PARA LAS OPERACIONES
+			SET @PesoNetoFloat = CAST(@PESONETO AS FLOAT)			
+			--SE EXTRAE EL VALOR TOTAL DEL MATERIAL 
+			SELECT @ValorTotalFloat = CAST(M.Total AS FLOAT)
+			FROM dbo.Materiales M WITH(NOLOCK)
+			WHERE M.material = @MATERIAL
+			--SE REALIZAN OPERACIONES
+			--//CALCULA EL PESO BRUTO POR UNIDAD//
+			IF (@CANTIDAD = 0)
+			BEGIN
+				 SET @PesoBrutoUnidadDec = 0.0		
+				 SET @PesoNetoPromDec = 0.0 		 
+			END
+			ELSE
+			BEGIN			 
+			--//CALCULA EL PESO BRUTO POR UNIDAD//
+				SET @PesoBrutoUnidadFloat = (@PesoNetoFloat/@CANTIDAD) + @ValorTotalFloat
+				-- SE CONVIERTE LOS DATOS EN DECIMAL PARA ASEGURAR LOS TRES DECIMALES				
+				SET @PesoBrutoUnidadDec = CAST(@PesoBrutoUnidadFloat AS DECIMAL(19,3))
+			--//CALCULA PESO NETO PROMEDIO
+				SET @PesoNetoPromFloat = @PesoNetoFloat / @CANTIDAD
+				SET @PesoNetoPromDec = 	CAST(@PesoNetoPromFloat AS DECIMAL(19,3))
+			END
+			-- SE CONVIERTE LOS DATOS EN DECIMAL PARA ASEGURAR LOS TRES DECIMALES PESO NETO
+				SET @PesoNetoDec = CAST(@PESONETO AS DECIMAL(19,3))		
+				
+			--SE ACTUALIZA LA INFORMACION
+			UPDATE dbo.basculas
+			SET  ip				= @IP
+				,puerto			= @PUERTO	
+				,peso			= @PesoNetoDec
+				,coderror		= @CODEERROR
+				,descerror		= @DESCERROR
+				,material		= RIGHT('000000000000000000' + Ltrim(Rtrim(@MATERIAL)),18)
+				,peso_netoProm	= @PesoNetoPromDec
+				,peso_bruto		= @PesoBrutoUnidadDec				
+				,cantidad		= @CANTIDAD
+			WHERE nombre = @BASCULA			
+			IF @@ROWCOUNT > 0
+			BEGIN
+				SET @Resultado = 1
+			END
+			ELSE
+			BEGIN 
+				SET @Resultado = 2
+			END
+						
+		COMMIT TRAN
+	END TRY
+	BEGIN CATCH
+		SET @Resultado = -101
+		SELECT @Resultado AS Resultado		
+	END CATCH
+	-- RETORNA EL PESO
+	SELECT @Resultado AS Resultado
+END
+
+
+**************************************************************
+
+
+
+CREATE PROCEDURE [dbo].[spComiActualizaAjustes]
+	(
+		@nuevo INT, @nuevoFacEx INT, @existente INT,  @usuario VARCHAR(50)
+	)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+DECLARE @Proceso TABLE(
+	id INT,
+	descripcion VARCHAR(100)
+)
+
+
+DECLARE @NewRows Int = 0
+
+IF (@nuevo = 1)
+BEGIN 
+	----------------------------
+	-- Cargar Items Nuevos de Ajustes
+	----------------------------
+	INSERT INTO [dbo].[comi_calAjustes](Factura, Material, [Desc de material], Parte, Pos, [Fecha Fact], [Vr Facturado], [N doc], Compens, [Fe valor],
+		FechaRecaudo, Cliente_SAP, Cliente, Cliente_Sipics, Credito, Zona, SubZona, Asesor_SAP, Asesor, Asesor_Sipics,
+		Empresa, TipoClie, DivEst, GrupoDeVenta, Dias, TipoComi, TipoComis, PorCom, Total,TablaCalculo
+		,userActual, fchActual)
+	SELECT Factura, Material, [Desc de material], Parte, Pos, [Fecha Fact], [Vr Facturado], [N doc], Compens, [Fe valor],
+		FechaRecaudo, Cliente_SAP, Cliente, Cliente_Sipics, Credito, Zona, SubZona, Asesor_SAP, Asesor, Asesor_Sipics,
+		Empresa, TipoClie, DivEst, GrupoDeVenta, Dias, TipoComi, TipoComis, PorCom, Total,TablaCalculo
+		,@usuario, getdate()
+	FROM [dbo].[comi_tmpAjustes] as tem
+	WHERE tem.observacion = 'Items nuevos'
+	----------------------------
+	SET @NewRows =  @@ROWCOUNT  
+
+	IF (@NewRows > 0)
+	BEGIN
+		INSERT INTO @Proceso(id, descripcion)
+		VALUES (1, convert(varchar,@NewRows) + ' - Items nuevos')
+	END	
+END
+
+
+IF(@existente = 1)
+BEGIN
+	----------------------------
+	-- Actualiza Items Existentes
+	----------------------------
+	UPDATE a SET
+		a.Factura = tem.Factura, a.Material = tem.Material, a.[Desc de material] = tem.[Desc de material], a.Parte = tem.Parte, a.Pos = tem.Pos, a.[Fecha Fact] = tem.[Fecha Fact], a.[Vr Facturado] = tem.[Vr Facturado], a.[N doc] = tem.[N doc], a.Compens = tem.Compens, a.[Fe valor] = tem.[Fe valor] ,
+		a.FechaRecaudo = tem.FechaRecaudo, a.Cliente_SAP = tem.Cliente_SAP, a.Cliente = tem.Cliente, a.Cliente_Sipics = tem.Cliente_Sipics, a.Credito = tem.Credito, a.Zona = tem.Zona, a.SubZona = tem.SubZona, a.Asesor_SAP = tem.Asesor_SAP, a.Asesor = tem.Asesor, a.Asesor_Sipics = tem.Asesor_Sipics ,
+		a.Empresa = tem.Empresa, a.TipoClie = tem.TipoClie, a.DivEst = tem.DivEst, a.GrupoDeVenta = tem.GrupoDeVenta, a.Dias = tem.Dias, a.TipoComi = tem.TipoComi, a.TipoComis = tem.TipoComis, a.PorCom = tem.PorCom, a.Total = tem.Total ,a.TablaCalculo = tem.TablaCalculo,
+		a.userActual = @usuario, a.fchActual = getdate()	
+	FROM [dbo].[comi_calAjustes] a
+	INNER JOIN [dbo].[comi_tmpAjustes] tem ON a.[Factura] = tem.[Factura] AND a.[Material] = tem.[Material] AND a.[Pos] = tem.[Pos]
+	
+	
+	
+	WHERE tem.observacion = 'Items existentes'
+	----------------------------
+	SET @NewRows =  @@ROWCOUNT  
+
+	IF (@NewRows > 0)
+	BEGIN
+		INSERT INTO @Proceso(id, descripcion)
+		VALUES (3, convert(varchar,@NewRows) + ' - Items existentes')
+	END	
+END
+
+
+IF EXISTS(SELECT id FROM @Proceso)
+BEGIN
+	INSERT INTO [dbo].[comi_LogCargas] (modulo,	paso, id_paso, descripcion_paso, fechaSys, usuarioSys)
+	SELECT 'CargaAjuste', 'ActualizarAjustes', id,  descripcion, GETDATE(), @usuario
+	FROM @Proceso
+
+	SELECT id, descripcion FROM @Proceso
+END
+ELSE
+	SELECT 4 AS id,'No se realizo ninguna operación'  as descripcion
+END
+
+
+
+

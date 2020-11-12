@@ -1,0 +1,55 @@
+
+Un ingeniero de DevOps o DevOps engineer es un profesional de la tecnología de la información (TI) que trabaja con desarrolladores de software, operadores de sistemas (SysOps) y otro personal de TI de producción para supervisar las publicaciones de códigos. Este rol requiere a alguien que posea las habilidades necesarias para superar las barreras tradicionales entre los equipos de desarrollo de software, pruebas y operaciones.
+
+ Los ingenieros DevOps deben tener una base sólida en PHP, Python, Perl, Ruby y
+ otros lenguajes de programación. Los ingenieros DevOps también se benefician 
+ de una formación en herramientas de gestión de la integración, como Jenkins, Maven o Apache Ant.
+ 
+ 
+ Muchos ingenieros DevOps son expertos con herramientas como Puppet, Chef y Vagrant.
+ 
+ Los ingenieros DevOps conocerán herramientas como Nagios, Zabbix, Sensu, 
+ Amazon CloudWatch, Splunk, New Relic y otros productos que monitorean el desempeño a nivel local y en las plataformas de nube pública.
+ 
+ 
+ Por ejemplo, si el negocio ata un nuevo producto de software a un back end de SQL, 
+ un ingeniero DevOps debe saber cómo configurar la base de datos y hacer consultas SQL complejas.
+ 
+Los ingenieros DevOps no solo adoptan las nuevas habilidades de programación,
+ las herramientas de automatización o las tácticas de aprovisionamiento de máquinas virtuales. 
+ 
+ 
+ ¿QUÉ ES UN DEVOPS ENGINEER?
+ 
+ Aunque los ingenieros de DevOps raramente codifican desde cero, deben comprender los conceptos básicos 
+ de los lenguajes de desarrollo de software y estar familiarizados con las herramientas de desarrollo 
+ utilizadas para crear un nuevo código o actualizar el código existente. 
+ 
+ 
+ 
+principales de un ingeniero DevOps:
+
+- Capacidad de utilizar una amplia variedad de tecnologías y herramientas de código abierto
+- código y script
+- Experiencia con sistemas y operaciones de TI
+- Comodidad con pruebas e implementaciones de código incrementales frecuentes
+- Fuerte comprensión de las herramientas de automatización
+- Habilidades de gestión de datos
+- Un fuerte enfoque en los resultados comerciales
+- Comodidad con la colaboración, comunicación abierta y traspaso de fronteras funcionales
+
+
+Colaborativas: Jira, Slack, Trello
+Gestión y revisión de código: Git, SVN
+Integración y despliegue continuo: Bamboo, Jenkins
+Automatización de pruebas: Selenium, Browserstack
+Automatización de releases: IBM Urbancode, AWS CodeDeploy
+Gestión de configuraciones: Puppet, Chef, Salt, Ansible
+Monitorización: Nagios, Datadog, Dynatrace
+Gestión de infraestructuras: Terraform, Vagrant, AWS Cloud Formation, Google Cloud, Cloud Deployment Manager, Azure Resource Manager
+Provisionamiento y empaquetado: Docker,  Kubernetes, Google/Azure/AWS
+Computación serveless: AWS Lambda, GCP Functions, Azure WebJobs
+
+
+El programa se articula en un primer mes de formación en áreas como Linux, Python, Scrum, Innovación, buenas prácticas,
+ calidad y productividad; y la posterior incorporación a proyecto real. Un gran peso en la formación corresponderá a las soluciones Amazon Web Services (AWS), ya que BEEVA es Advanced Consulting Partner y, entre otras certificaciones, obtuvo este año la Managed Services Partner (MSP), otorgada a empresas con capacidad y conocimiento demostrado para introducir e implantar soluciones AWS y que poseen poco más de 70 empresas en el mundo.

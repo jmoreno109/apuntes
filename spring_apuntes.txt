@@ -1,0 +1,507 @@
+
+*********************
+JndiObjectFactoryBean
+*********************
+permite obtener el acceso a base de datos desde un DataSource previamente configurado en cualquier contenerdor JEE y acceseble vía JNDI.
+
+	<bean id="dataSource"
+		class="org.springframework.jndi.JndiObjectFactoryBean">
+		<property name="jndiName" value="java:CompDS" />
+	</bean>
+
+
+
+
+*****************************
+AnnotationSessionFactoryBean:
+*****************************
+
+Hibernate puede configurarse con anotaciones en vez de archivos XML para definir los mapeos.
+
+
+ <bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+   <property name="dataSource" ref="dataSource"/>
+   <property name="annotatedClasses">
+     <list>
+       <value>test.package.Foo</value>
+       <value>test.package.Bar</value>
+     </list>
+   </property>
+ </bean>
+
+
+Or when using classpath scanning for autodetection of entity classes:
+
+
+ <bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+   <property name="dataSource" ref="dataSource"/>
+   <property name="packagesToScan" value="test.package"/>
+ </bean>
+
+
+mas detallada:
+
+	<!-- Hibernate SessionFactory Definition -->
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean"
+		lazy-init="default" autowire="default">
+
+		<property name="dataSource">
+			<ref bean="dataSource" />
+		</property>
+
+		<property name="packagesToScan"
+			value="com.fedecafe.integration.data" />
+
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">
+					org.hibernate.dialect.Oracle10gDialect
+				</prop>
+				<prop key="hibernate.show_sql">false</prop>
+				<prop key="hibernate.cglib.use_reflection_optimizer">
+					true
+				</prop>
+				<prop key="hibernate.cache.provider_class">
+					org.hibernate.cache.HashtableCacheProvider
+				</prop>
+			</props>
+		</property>
+	</bean>
+
+
+***************************
+HibernateTransactionManager
+***************************
+Este bean se encarga del manejo de transacciones.
+
+	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory">
+			<ref local="sessionFactory" />
+		</property>
+	</bean>
+
+
+
+***********************************************************
+<aop:config> - <tx:advice> - configuracion de transacciones
+***********************************************************
+
+
+El API para manejo de transacciones en Java se conoce como JTA (Java Transaction API). 
+JTA permite iniciar y hacer commit o rollback de transacciones.
+Usualmente no se utiliza JTA directamente, sino a través de otros frameworks y utilidades.
+
+
+<aop:pointcut -> es un punto de quiebre del flujo normal de ejecucion. se puede agregar nuevas funcionalidades
+- indica cuales clases se van a interceptar para agregar transaccion
+
+	<!-- Transactional proxy for the Core Trace Service -->
+	<aop:config>
+		<aop:pointcut id="appServiceOperation"
+			expression="execution(* com.fedecafe.business..*.*(..))" />
+		<aop:advisor advice-ref="txAdvice"
+			pointcut-ref="appServiceOperation" />
+	</aop:config>
+
+	<!--
+		the transactional advice (i.e. what 'happens'; see the <aop:advisor/>
+		bean below)
+	-->
+
+<tx:advice> - > En un grupo de metodos que se ejecutan como respuesta a un punto de quiebre - <aop:pointcut>
+- indica que tipo de transaccion se le aplicara a las clases interceptadas por el pointcut
+- por defecto las transacciones hacen rollback cuando se genera un RuntimeException , pero se puede definir de manera personalizada
+
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<!-- the transactional semantics... -->
+		<tx:attributes>
+			<!-- all methods starting with 'get' are read-only -->
+			<tx:method name="get*" read-only="true"
+				propagation="REQUIRED" />
+			<tx:method name="retrieve*" read-only="true" />
+			<!-- other methods use the default transaction settings (see below) -->
+			<tx:method name="*" rollback-for="DAOException" />
+		</tx:attributes>
+	</tx:advice>
+
+
+*******************
+HibernateDaoSupport
+*******************
+
+Spring nos provee la clase HibernateDaoSupport para brindarle a nuestros DAO soporte para Hibernate.
+
+
+	<!-- HibernateBaseDAO Definition -->
+	<bean id="baseDAO"
+		class="com.fedecafe.integration.dao.hibernate.HibernateBaseDAO">
+		<property name="sessionFactory">
+			<ref bean="sessionFactory" />
+		</property>
+	</bean>
+
+
+
+
+*********************
+SchedulerFactoryBean
+*********************
+
+Spring Framework provee soporte para crear tareas en Quartz(ejecución de tareas) de forma declarativa. 
+Así, a través de la declaración de beans, podremos ejecutar periódicamente métodos de cualquier de los beans declarados en Spring.
+
+* SimpleTriggerBean: se utiliza para que el job corra cada n cantidad de milisegundos.
+* CronTriggerBean: se usa para correr un job en un horario fijo.
+
+
+A couple of examples:
+
+<bean id="simpleTrigger" class="org.springframework.scheduling.quartz.SimpleTriggerBean">
+  <!-- see the example of method invoking job above -->
+  <property name="jobDetail" ref="jobDetail"/>
+	<!-- 10 seconds -->
+  <property name="startDelay" value="10000"/>
+	<!-- repeat every 50 seconds -->
+  <property name="repeatInterval" value="50000"/>
+</bean>
+
+<bean id="cronTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+  <property name="jobDetail" ref="exampleJob"/>
+	<!-- run every morning at 6 AM -->
+  <property name="cronExpression" value="0 0 6 * * ?"/>
+</bean>
+			
+OK, now we've set up two triggers, one running every 50 seconds with a starting delay of 10 seconds and one every morning at 6 AM. To finalize everything, we need to set up the SchedulerFactoryBean:
+
+<bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+  <property name="triggers">
+    <list>
+      <ref bean="cronTrigger"/>
+      <ref bean="simpleTrigger"/>
+    </list>
+  </property>
+</bean>
+
+<bean id="exampleJob" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+  <property name="targetObject" ref="verifyInvoiceManager" />
+  <property name="targetMethod" value="verifyPendingInvoice" />
+  <property name="concurrent" value="false" />
+</bean>
+
+
+
+**************
+LdapTemplate
+**************
+
+	<!-- LDAP template Spring -->
+	<bean id="contextSource"
+		class="org.springframework.ldap.core.support.LdapContextSource">
+		<property name="url" value="ldap://192.168.24.127:389" />
+		<property name="base" value="dc=fnc-federacion,dc=com" />
+		<property name="userDn"
+			value="cn=Manager,dc=fnc-federacion,dc=com" />
+		<property name="password" value="secret" />
+	</bean>
+	<bean id="ldapTemplate"
+		class="org.springframework.ldap.core.LdapTemplate">
+		<constructor-arg ref="contextSource" />
+	</bean>
+
+
+
+
+*********************
+SessionPhaseListener
+*********************
+
+escucha cuando alguien inicia o cierra la session - web.xml
+
+	<!-- Session listener time out -->
+	<listener>
+		<listener-class>
+			com.fedecafe.view.listener.SessionPhaseListener
+		</listener-class>
+	</listener>
+
+
+
+*******************
+JavaMailSenderImpl
+*******************
+
+
+	<!-- Mail configuration -->
+
+	<bean id="mailSession"
+		class="org.springframework.jndi.JndiObjectFactoryBean">
+		<property name="jndiName">
+			<value>java:/mail/sample_jms</value>
+		</property>
+	</bean>
+
+	<bean id="mailSender"
+		class="org.springframework.mail.javamail.JavaMailSenderImpl">
+		<property name="session">
+			<ref bean="mailSession" />
+		</property>
+	</bean>
+
+
+
+
+
+************************
+Wen services with spring
+************************
+
+
+1.First we'll write our service interface. It will have one operation called "sayHello" which says "Hello" to whoever submits their name.
+
+package demo.spring.service;
+ 
+import javax.jws.WebService;
+ 
+@WebService
+public interface HelloWorld {
+    String sayHi(String text);
+}
+
+
+
+2.Our implementation will then look like this:
+
+package demo.spring.service;
+ 
+import javax.jws.WebService;
+ 
+@WebService(endpointInterface = "demo.spring.service.HelloWorld")
+public class HelloWorldImpl implements HelloWorld {
+ 
+    public String sayHi(String text) {
+        System.out.println("sayHi called");
+        return "Hello " + text;
+    }
+}
+
+3.CXF contains support for "nice XML" within Spring 2.0. For the JAX-WS side of things, we have a <jaxws:endpoint> bean which sets up a server side endpoint.
+Lets create a "cxf-servlet.xml" file in our WEB-INF directory which declares an endpoint bean:
+
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jaxws="http://cxf.apache.org/jaxws" xsi:schemaLocation=" http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd">
+    <import resource="classpath:META-INF/cxf/cxf.xml"/>
+    <import resource="classpath:META-INF/cxf/cxf-servlet.xml"/>
+    <jaxws:endpoint id="helloWorld" implementor="demo.spring.service.HelloWorldImpl" address="/HelloWorld"/>
+</beans>
+
+
+4.If you want to reference a spring managed-bean, you can write like this:
+
+<bean id="hello" class="demo.spring.service.HelloWorldImpl" />
+ 
+<jaxws:endpoint id="helloWorld" implementor="#hello" address="/HelloWorld" />
+
+
+
+
+
+
+*******************************
+AspectJ PointCut Expressions
+*******************************
+
+expression(<method scope> <return type> <fully qualified class name>.*(parametes))
+
+method scope: Advice will be applied to all the methods having this scope. 
+For e.g., public, private, etc. Please note that Spring AOP only supports advising public methods.
+
+return type: Advice will be applied to all the methods having this return type.
+
+fully qualified class name: Advice will be applied to all the methods of this type. 
+If the class and advice are in the same package then package name is not required
+
+parameters: You can also filter the method names based on the types. Two dots(..) 
+means any number and type of parameters.
+
+
+execution(public * *(..)) => The execution of any public method
+
+execution(* calculate*(..)) => The execution of any method with a name beginning with “calculate”
+
+execution(* com.kb.SimpleCalculator.*(..)) => The execution of any method defined by the SimpleCalculator class
+
+execution(public  com.kb. SimpleCalculator.*(..)) => The execution of only public method defined by the SimpleCalculator class
+
+
+
+********************************************************************************************************
+
+// Creating a Unit Test Class
+
+In order for the unit test to run a batch job, the framework must load the job's ApplicationContext. Two annotations are used to trigger this:
+
+@RunWith(SpringJUnit4ClassRunner.class) // Indicates that the class should use Spring's JUnit facilities
+@ContextConfiguration(locations = {...}) // Indicates which XML files contain the ApplicationContext.
+@ContextConfiguration(classes = {AppConfig.class})
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = { "classpath:/com/fedecafe/test/applicationContext.xml" })
+public class BaseTest extends AbstractTransactionalJUnit4SpringContextTests {}
+
+public class InvoiceManagerTest extends BaseTest {
+
+	@Resource
+	BusinessManager businessManager;
+
+	@Test
+	public void init() throws IntegrationException, ParseException {}
+}
+
+
+// Testing support for @Configuration classes
+
+ @RunWith(SpringRunner.class)
+ @ContextConfiguration(classes = {AppConfig.class, DatabaseConfig.class})
+ public class MyTests {
+
+     @Autowired MyBean myBean;
+
+     @Autowired DataSource dataSource;
+
+     @Test
+     public void test() {
+         // assertions against myBean ...
+     }
+ }
+
+
+********************************************************************************************************
+
+
+// With Spring XML using the @ImportResource annotation
+
+@Configuration
+@ImportResource("classpath:/com/acme/database-config.xml")
+public class AppConfig {
+
+    @Inject DataSource dataSource; // from XML
+
+    @Bean
+    public MyBean myBean() {
+        // inject the XML-defined dataSource bean
+        return new MyBean(this.dataSource);
+    }
+}
+ 
+// Load Spring XML From JavaConfig
+ 
+@Configuration
+@Import({ AppConfigOthers.class }) //loads another JavaConfig
+@ImportResource("classpath:/config/database-config.xml")
+public class AppConfigCore {
+ 
+	@Autowired
+	DataSource dataSource;
+ 
+	@Bean
+	public JdbcTemplate getJdbcTemplate() {
+		return new JdbcTemplate(dataSource);
+	}
+ 
+// Loads multiple Spring XML files
+ 
+@Configuration
+@Import({ AppConfigOthers.class })
+@ImportResource({
+     "classpath:/config/spring-web-servlet.xml", 
+     "classpath:/config/database-config.xml"
+})
+public class AppConfigCore {}
+
+******************************************************************************************************** 
+ 
+ Unable to instantiate default tuplizer [org.hibernate.tuple.entity.PojoEntityTuplizer]
+ 
+ Exception in thread "main" org.hibernate.LazyInitializationException: could not initialize proxy - no Session
+ 
+ 
+ 
+
+
+******************************************************************************************************** 
+ 
+ Use @Profile on a Bean
+
+ // Consider a basic scenario – we have a bean that should only be active during development, but not deployed in production. 
+ // We annotate that bean with a “dev” profile, and it will only be present in the container during development – in production
+
+ @Component
+ @Profile("dev")
+ public class DevDatasourceConfig
+
+<beans profile="dev">
+    <bean id="devDatasourceConfig"
+      class="org.baeldung.profiles.DevDatasourceConfig" />
+</beans>
+
+
+// In web applications, WebApplicationInitializer can be used to configure the ServletContext programmatically.
+
+@Configuration
+public class MyWebApplicationInitializer 
+  implements WebApplicationInitializer {
+ 
+    @Override
+    public void onStartup(ServletContext servletContext) throws ServletException {
+  
+        servletContext.setInitParameter(
+          "spring.profiles.active", "dev");
+    }
+}
+
+
+// Similarly, profiles can be activated in the web.xml of the web application as well, using a context parameter:
+
+<context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>/WEB-INF/app-config.xml</param-value>
+</context-param>
+<context-param>
+    <param-name>spring.profiles.active</param-name>
+    <param-value>dev</param-value>
+</context-param>
+
+
+
+// Spring profiles can also be activated via Maven profiles, by specifying the spring.profiles.active configuration property.
+
+<profiles>
+    <profile>
+        <id>dev</id>
+        <activation>
+            <activeByDefault>true</activeByDefault>
+        </activation>
+        <properties>
+            <spring.profiles.active>dev</spring.profiles.active>
+        </properties>
+    </profile>
+    <profile>
+        <id>prod</id>
+        <properties>
+            <spring.profiles.active>prod</spring.profiles.active>
+        </properties>
+    </profile>
+</profiles>
+
+
+
+
+
+
+
+
+
+
+
+

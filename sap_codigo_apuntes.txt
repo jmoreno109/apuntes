@@ -1,0 +1,1554 @@
+
+
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+FUNCTION ZRFC_EXEC_SQL.
+*"----------------------------------------------------------------------
+*"*"Interfase local
+*"  IMPORTING
+*"     VALUE(DELIMITER) LIKE  SONV-FLAG DEFAULT SPACE
+*"     VALUE(SQL_QUERY) TYPE  STRING
+*"  TABLES
+*"      DATA STRUCTURE  TAB512
+*"  EXCEPTIONS
+*"      SQL_EXCEPTION
+*"----------------------------------------------------------------------
+
+
+  DATA LO_SQL       TYPE REF TO CL_SQL_STATEMENT.
+  DATA LT_COLS      TYPE ADBC_COLUMN_TAB.
+  DATA WA_LT_COLS   LIKE LINE OF LT_COLS.
+  DATA LV_SQL       TYPE STRING.
+  DATA LO_TABLE     TYPE REF TO DATA.
+  DATA LO_RESULT    TYPE REF TO CL_SQL_RESULT_SET.
+  DATA LO_ERR       TYPE REF TO CX_SQL_EXCEPTION.
+  DATA LO_OUTPUT    TYPE REF TO DATA.
+  DATA LO_NOT_FOUND TYPE REF TO CX_SALV_NOT_FOUND.
+  DATA LO_ALV       TYPE REF TO CL_SALV_TABLE.
+  DATA LO_ERR2      TYPE REF TO CX_SALV_MSG.
+  DATA LV_DELIM     TYPE STRING.
+  DATA LV_SELECT    TYPE STRING.
+  DATA LV_FROM      TYPE STRING.
+
+
+  TYPES:BEGIN OF TY_RESULT_LINE,
+  LINE TYPE STRING,
+  END OF TY_RESULT_LINE.
+  DATA IT_RESULT_TAB TYPE STANDARD TABLE OF TY_RESULT_LINE.
+  DATA WA_RESULT_TAB TYPE TY_RESULT_LINE.
+
+  TRY.
+
+      TRANSLATE SQL_QUERY TO UPPER CASE.
+      SPLIT SQL_QUERY AT 'FROM' INTO LV_SELECT LV_FROM.
+      LV_DELIM = DELIMITER.
+      CONCATENATE `||'` LV_DELIM `'||` INTO LV_DELIM.
+      REPLACE ALL OCCURRENCES OF ',' IN LV_SELECT WITH LV_DELIM.
+      CONCATENATE LV_SELECT ' FROM ' LV_FROM INTO LV_SQL.
+
+      CREATE OBJECT LO_SQL.
+      GET REFERENCE OF IT_RESULT_TAB INTO LO_OUTPUT.
+      APPEND 'LINE' TO LT_COLS.
+
+      LO_RESULT = LO_SQL->EXECUTE_QUERY( LV_SQL ).
+      LO_RESULT->SET_PARAM_TABLE( ITAB_REF = LO_OUTPUT
+                               CORRESPONDING_FIELDS = LT_COLS ).
+      IF LO_RESULT->NEXT_PACKAGE( ) > 0.
+        LOOP AT IT_RESULT_TAB INTO WA_RESULT_TAB.
+          APPEND WA_RESULT_TAB-LINE TO DATA.
+        ENDLOOP.
+      ENDIF.
+    CATCH CX_SQL_EXCEPTION INTO LO_ERR.
+      RAISE SQL_EXCEPTION.
+
+  ENDTRY.
+ENDFUNCTION.
+
+
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+
+FUNCTION ZRFC_GET_CONSOLIDADO_VENTAS .
+*"----------------------------------------------------------------------
+*"*"Interfase local
+*"  TABLES
+*"      DATA STRUCTURE  TAB512
+*"----------------------------------------------------------------------
+
+  DATA LV_FKIMG TYPE STRING.
+  DATA LV_NETWR TYPE STRING.
+  DATA LV_NTGEW TYPE STRING.
+  DATA LV_CONTADOR  TYPE I.
+  DATA LV_FIRST_DAY TYPE D.
+  DATA LV_LAST_DAY  TYPE D.
+  DATA LV_CONTADOR_STR TYPE STRING.
+  DATA LV_CURR TYPE BAPICURR-BAPICURR.
+  LV_CONTADOR = 1.
+
+
+  TYPES: BEGIN OF TY_CVENTAS,
+    VKORG TYPE VBRK-VKORG, "Organización de Ventas
+    LGORT TYPE VBRP-LGORT, "Almacén
+    SPART TYPE VBRK-SPART, "Sector
+    FKART TYPE VBRK-FKART, "Clase de Documentos
+    MATKL TYPE VBRP-MATKL, "Grupo de Artículos
+    ERDAT TYPE VBRK-ERDAT, "Fecha de Creación
+    FKDAT TYPE VBRK-FKDAT, "Fecha de Factura
+    FKIMG TYPE VBRP-FKIMG, "Cantidad Facturada
+    NETWR TYPE VBRP-NETWR, "Valor Neto ($)
+    NTGEW TYPE VBRP-NTGEW, "Peso Neto
+    GEWEI TYPE VBRP-GEWEI, "Unidad de peso
+    WERKS TYPE VBRP-WERKS, "Centro
+    WGBEZ TYPE T023T-WGBEZ,"Descripción Grupo de Artículos
+    WAERK TYPE VBRK-WAERK, "Moneda
+  END OF TY_CVENTAS.
+  DATA ST_CVENTAS TYPE TY_CVENTAS.
+  DATA IT_CVENTAS TYPE STANDARD TABLE OF TY_CVENTAS.
+
+
+  CALL FUNCTION 'FIRST_AND_LAST_DAY_IN_YEAR_GET'
+    EXPORTING
+      I_GJAHR     = SY-DATUM+0(4)
+      I_PERIV     = '24'
+    IMPORTING
+      E_FIRST_DAY = LV_FIRST_DAY
+      E_LAST_DAY  = LV_LAST_DAY.
+
+
+  SELECT VBRK~VKORG VBRP~LGORT VBRK~SPART VBRK~FKART
+  VBRP~MATKL VBRK~ERDAT VBRK~FKDAT VBRP~FKIMG
+  VBRP~NETWR VBRP~NTGEW VBRP~GEWEI VBRP~WERKS
+  T023T~WGBEZ VBRK~WAERK
+  INTO CORRESPONDING FIELDS OF TABLE IT_CVENTAS
+  FROM VBRK
+  INNER JOIN VBRP
+  ON VBRK~VBELN = VBRP~VBELN
+  INNER JOIN T023T
+  ON VBRP~MATKL = T023T~MATKL
+  WHERE VBRK~FKSTO = SPACE
+  AND ( VBRK~FKART = 'ZC03' OR VBRK~FKART = 'ZC12' )
+  AND VBRP~LGORT <> SPACE
+  AND VBRK~FKDAT BETWEEN LV_FIRST_DAY AND LV_LAST_DAY.
+
+
+  LOOP AT IT_CVENTAS INTO ST_CVENTAS.
+    LV_FKIMG =  ST_CVENTAS-FKIMG.
+    CALL FUNCTION 'BAPI_CURRENCY_CONV_TO_EXTERNAL'
+      EXPORTING
+        CURRENCY        = ST_CVENTAS-WAERK
+        AMOUNT_INTERNAL = ST_CVENTAS-NETWR
+      IMPORTING
+        AMOUNT_EXTERNAL = LV_CURR.
+    LV_NETWR = LV_CURR.
+    LV_NTGEW = ST_CVENTAS-NTGEW.
+    LV_CONTADOR_STR = LV_CONTADOR.
+    CONCATENATE LV_CONTADOR_STR ST_CVENTAS-VKORG ST_CVENTAS-LGORT
+    ST_CVENTAS-SPART ST_CVENTAS-FKART
+    ST_CVENTAS-MATKL ST_CVENTAS-ERDAT
+    ST_CVENTAS-FKDAT LV_FKIMG LV_NETWR
+    LV_NTGEW ST_CVENTAS-GEWEI
+    ST_CVENTAS-WERKS ST_CVENTAS-WGBEZ
+    INTO DATA SEPARATED BY '|'.
+    APPEND DATA.
+    LV_CONTADOR = LV_CONTADOR + 1.
+  ENDLOOP.
+ENDFUNCTION.
+
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+*&--------------------------------------------------------------------*
+*& Report  ZFIR_C_ESTADO_CARTERA
+*&
+*&--------------------------------------------------------------------*
+*  Programa    : ZFIR_C_ESTADO_CARTERA
+*  Funcional   : Cesar Gónzalez
+*  Autor       : Julian Moreno Aguilar
+*  Descripción : Estado de Cartera
+*  Fecha       : Enero 28 de 2015
+*&--------------------------------------------------------------------*
+REPORT  ZFIR_C_ESTADO_CARTERA.
+
+
+***********************
+* Definición de tablas
+***********************
+TABLES:DKADR,KNA1,KNB1,BKORM,
+  BSEG.
+
+
+*********************************************************
+* Definición de los parametros de selección del programa
+*********************************************************
+SELECTION-SCREEN BEGIN OF BLOCK RAD1 WITH FRAME TITLE A1TITLE.
+PARAMETERS:RBUKRS LIKE BKORM-BUKRS OBLIGATORY.      " Sociedad
+SELECT-OPTIONS S_MATNR FOR KNA1-KUNNR OBLIGATORY .  " Número de la cuenta de terceros
+SELECTION-SCREEN BEGIN OF LINE.
+SELECTION-SCREEN COMMENT 01(30) TEXT-103 FOR FIELD RASTBIS1.
+SELECTION-SCREEN POSITION POS_LOW.
+PARAMETERS: RASTBIS1 LIKE RFPDO1-ALLGROGR DEFAULT '000' .  " Cuadricula 1
+PARAMETERS: RASTBIS2 LIKE RFPDO1-ALLGROGR DEFAULT '000' .  " Cuadricula 2
+PARAMETERS: RASTBIS3 LIKE RFPDO1-ALLGROGR DEFAULT '000' .  " Cuadricula 3
+SELECTION-SCREEN END OF LINE.
+SELECTION-SCREEN END OF BLOCK RAD1.
+
+
+****************************************************
+* Definición de las variables globales del programa
+****************************************************
+DATA LV_FUNCTION   TYPE RS38L_FNAM.       " Modulo de función que ejecuta el smartforms
+DATA LV_KUNNR      LIKE BSEG-KUNNR.       " Número del Cliente
+DATA LV_BUKRS      LIKE BSEG-BUKRS.       " Sociedad
+DATA LV_T_DIAS_VEN TYPE I.                " Total días Vencidos
+DATA LV_DATUM      TYPE STRING.           " Fecha Actual en formato especial
+DATA IT_AB         TYPE TABLE OF RF140.   " Cuadro de vencimiento
+DATA LS_MOV        TYPE RF140.            " Estructura tipo rf140
+DATA LV_DT_ACTUAL  TYPE SY-DATUM.         " Fecha Actual
+DATA LV_TFAC_V     TYPE WRBTR.            " Valor total de facturas vencidas
+DATA LV_TFAC_NV    TYPE WRBTR.            " Valor total de facturas sin vencer
+DATA RASTBIS1_R1   LIKE RFPDO1-ALLGROGR.  " Valor de la cuadricula 1 mas uno
+DATA RASTBIS2_R2   LIKE RFPDO1-ALLGROGR.  " Valor de la cuadricula 2 mas uno
+DATA RASTBIS3_R3   LIKE RFPDO1-ALLGROGR.  " Valor de la cuadricula 3 mas uno
+DATA LV_FILENAME0  TYPE STRING.
+DATA LV_FILENAME1  TYPE STRING.
+DATA LV_FILENAME   TYPE STRING.
+DATA ST_JOB_OUTPUT_INFO       TYPE SSFCRESCL.
+DATA ST_DOCUMENT_OUTPUT_INFO  TYPE SSFCRESPD.
+DATA ST_JOB_OUTPUT_OPTIONS    TYPE SSFCRESOP.
+DATA ST_OUTPUT_OPTIONS        TYPE SSFCOMPOP.
+DATA ST_CONTROL_PARAMETERS    TYPE SSFCTRLOP.
+DATA V_LEN_IN                 TYPE SO_OBJ_LEN.
+DATA V_LANGUAGE               TYPE SFLANGU VALUE 'E'.
+DATA V_E_DEVTYPE              TYPE RSPOPTYPE.
+DATA V_BIN_FILESIZE           TYPE I.
+DATA V_NAME                   TYPE STRING.
+DATA V_PATH                   TYPE STRING.
+DATA V_FULLPATH               TYPE STRING.
+DATA V_FILTER                 TYPE STRING.
+DATA V_UACT                   TYPE I.
+DATA V_GUIOBJ                 TYPE REF TO CL_GUI_FRONTEND_SERVICES.
+DATA V_FILENAME               TYPE STRING.
+DATA V_FM_NAME                TYPE RS38L_FNAM.
+DATA LV_INTERNAL              TYPE STRING.
+DATA IT_OTF                   TYPE STANDARD TABLE OF ITCOO.
+DATA IT_DOCS                  TYPE STANDARD TABLE OF DOCS.
+DATA IT_LINES                 TYPE STANDARD TABLE OF TLINE.
+DATA LV_COUNT                 TYPE I.
+DATA ZAUTOR                   TYPE I.
+DATA LV_CURR                  TYPE BAPICURR-BAPICURR.
+DATA LV_XBLNR                 TYPE XBLNR1.
+
+
+
+************************************
+* Definición de las tablas internas
+************************************
+* Tabla interna - Partidas(Facturas) Abiertas
+DATA BEGIN OF IT_FAC OCCURS 0.
+        INCLUDE STRUCTURE BSID.
+DATA END OF IT_FAC.
+* Tabla interna - Partidas(Facturas) Vencidas
+DATA BEGIN OF IT_FAC_V OCCURS 0.
+        INCLUDE STRUCTURE BSID.
+DATA END OF IT_FAC_V.
+* Tabla interna - Partidas(Facturas) No Vencidas
+DATA BEGIN OF IT_FAC_NV OCCURS 0.
+        INCLUDE STRUCTURE BSID.
+DATA END OF IT_FAC_NV.
+* Tabla interna - Clientes
+DATA BEGIN OF IT_CLIENTES OCCURS 0.
+        INCLUDE STRUCTURE BSID.
+DATA END OF IT_CLIENTES.
+DATA LS_VBAK2 LIKE LINE OF IT_CLIENTES.
+
+
+* Validación del objeto de autorización
+AUTHORITY-CHECK OBJECT 'F_BKPF_BUK'
+    ID 'BUKRS' FIELD RBUKRS
+    ID 'ACTVT' FIELD '03'.
+IF SY-SUBRC NE 0.
+  ZAUTOR = 1.
+  EXIT.
+ENDIF.
+IF ZAUTOR EQ 1.
+  MESSAGE S036(ZF) WITH
+  'Falta autorizacion para la sociedad ' RBUKRS.
+  STOP.
+ENDIF.
+
+* Consulta los clientes con partidas abiertas de tipo de documento DR(facturas deudor) y AB
+SELECT KUNNR BELNR GJAHR FROM BSID INTO CORRESPONDING FIELDS OF TABLE IT_CLIENTES
+WHERE ( BLART = 'DR' OR BLART = 'AB' ) AND KUNNR IN S_MATNR.
+DELETE ADJACENT DUPLICATES FROM IT_CLIENTES COMPARING ALL FIELDS.
+
+LOOP AT IT_CLIENTES INTO LS_VBAK2.
+  REFRESH IT_FAC.
+  REFRESH IT_AB.
+  REFRESH IT_FAC_V.
+  REFRESH IT_FAC_NV.
+
+* Obtiene los datos del deudor
+  LV_KUNNR = LS_VBAK2-KUNNR.
+  LV_BUKRS = RBUKRS.
+  PERFORM READ_KNA1.
+  PERFORM READ_KNB1.
+  PERFORM SET_DATA_DEU_TO_DKADR.
+
+* Valida los documentos que tengan cuenta 2810950007 - No se toman en cuenta
+  SELECT SINGLE * FROM BSEG WHERE BUKRS = LV_BUKRS AND KUNNR = LV_KUNNR
+  AND BELNR = LS_VBAK2-BELNR AND GJAHR = LS_VBAK2-GJAHR AND HKONT = '2810950007'.
+  IF SY-SUBRC NE 0.
+
+*   Consulta las partidas abiertas con tipo de documento DR(facturas deudor) - AB
+    SELECT XBLNR BUDAT WRBTR WAERS BUKRS KUNNR BELNR ZFBDT ZBD1T ZBD2T SHKZG ZUONR
+    FROM BSID INTO CORRESPONDING FIELDS OF TABLE IT_FAC
+    WHERE BUKRS = LV_BUKRS AND KUNNR = LV_KUNNR AND ( BLART = 'DR' OR BLART = 'AB' ).
+
+*   Obtiene las partidas vencidas y no vencidas según validación
+    IF SY-DBCNT > 0.
+      LV_DT_ACTUAL = SY-DATUM.
+      DATA LS_VBAK LIKE LINE OF IT_FAC.
+      LOOP AT IT_FAC INTO LS_VBAK.
+        LV_T_DIAS_VEN = LV_DT_ACTUAL - ( LS_VBAK-ZFBDT + LS_VBAK-ZBD1T ).
+        PERFORM VALID_XBLNR_TEXT USING LS_VBAK-XBLNR LS_VBAK-ZUONR CHANGING LV_XBLNR.
+        LS_VBAK-XBLNR = LV_XBLNR.
+        IF LV_T_DIAS_VEN > 0.
+          IF LS_VBAK-SHKZG EQ 'S'.
+            IF LV_T_DIAS_VEN > 999.
+              LS_VBAK-ZBD2T = 999.
+            ELSE.
+              LS_VBAK-ZBD2T = LV_T_DIAS_VEN.
+            ENDIF.
+            PERFORM GET_CONV_TO_EXT USING LS_VBAK-WAERS LS_VBAK-WRBTR CHANGING LV_CURR .
+            LV_TFAC_V = LV_TFAC_V + LV_CURR.
+            APPEND LS_VBAK TO IT_FAC_V.
+          ENDIF.
+        ELSE.
+          LS_VBAK-ZBD2T = LV_T_DIAS_VEN * -1.
+          PERFORM GET_CONV_TO_EXT USING LS_VBAK-WAERS LS_VBAK-WRBTR CHANGING LV_CURR .
+          LV_TFAC_NV = LV_TFAC_NV + LV_CURR.
+          APPEND LS_VBAK TO IT_FAC_NV.
+        ENDIF.
+      ENDLOOP.
+
+*     Calcula el cuadro de vencimiento
+      PERFORM CALC_CUADRO_VENC TABLES IT_AB IT_FAC.
+
+*     Obtiene la fecha actual segun formato
+      PERFORM FORMATEAR_FECHA_ACTUAL USING LV_DT_ACTUAL CHANGING LV_DATUM.
+
+*     Genera el archivo estado de cartera
+      LV_FILENAME1 = 'C:\Archivos_Estado_Cartera\'.
+      CONCATENATE  KNA1-STCD1 KNA1-SORTL SY-DATUM INTO LV_INTERNAL SEPARATED BY '_'.
+      CONCATENATE LV_INTERNAL '.pdf' INTO LV_FILENAME0.
+      CONCATENATE LV_FILENAME1 LV_FILENAME0 INTO LV_FILENAME.
+      PERFORM GENERAR_ARCHIVO USING LV_FILENAME.
+
+    ENDIF.
+    CLEAR LV_TFAC_V.
+    CLEAR LV_TFAC_NV.
+  ENDIF.
+
+ENDLOOP.
+MESSAGE 'Se han guardado correctamente los documentos en la unidad C:\Archivos_Estado_Cartera ' TYPE 'S'.
+
+
+*----------------------------------------------------------------------*
+* INITIALIZATION                                                       *
+*----------------------------------------------------------------------*
+INITIALIZATION.
+  PERFORM SELECTION_SCREEN_TEXT.
+
+
+*----------------------------------------------------------------------*
+* AT SELECTION SCREEN                                                  *
+*----------------------------------------------------------------------*
+AT SELECTION-SCREEN.
+  IF RASTBIS1 IS INITIAL OR RASTBIS2 IS INITIAL OR RASTBIS3 IS INITIAL.
+    MESSAGE 'Los cuadros de vencimiento son obligatorios.' TYPE 'E'.
+    LEAVE LIST-PROCESSING.
+  ENDIF.
+  IF RASTBIS1 IS NOT INITIAL AND
+   RASTBIS2 IS NOT INITIAL AND
+   RASTBIS3 IS NOT INITIAL.
+    IF RASTBIS1 < RASTBIS2 AND RASTBIS2 < RASTBIS3.
+    ELSE.
+      MESSAGE 'Los cuadros de vencimiento deben ir de menor a mayor tiempo.' TYPE 'E'.
+    ENDIF.
+  ENDIF.
+
+
+
+
+*&---------------------------------------------------------------------*
+*&      Form  read_kna1
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+FORM READ_KNA1.
+  SELECT SINGLE * FROM KNA1
+    WHERE KUNNR = LV_KUNNR.
+ENDFORM.                                                    "read_kna1
+
+*&---------------------------------------------------------------------*
+*&      Form  read_knb1
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+FORM READ_KNB1.
+  SELECT SINGLE * FROM KNB1
+    WHERE KUNNR = LV_KUNNR
+    AND   BUKRS = LV_BUKRS.
+ENDFORM.                                                    "read_knb1
+
+*&---------------------------------------------------------------------*
+*&      Form  SET_DATA_DEU_TO_DKADR
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+FORM SET_DATA_DEU_TO_DKADR.
+  MOVE-CORRESPONDING KNA1 TO DKADR.
+  MOVE-CORRESPONDING KNB1 TO DKADR.
+  MOVE KNA1-KUNNR         TO DKADR-KONTO.
+ENDFORM.                    "SET_DATA_DEU_TO_DKADR
+
+*&---------------------------------------------------------------------*
+*&      Form  SELECTION_SCREEN_TEXT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM SELECTION_SCREEN_TEXT .
+  A1TITLE = 'Control de Salida'.
+ENDFORM.                    " SELECTION_SCREEN_TEXT
+
+*&---------------------------------------------------------------------*
+*&      Form  FORMATEAR_FECHA_ACTUAL
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*      -->P_SY_DATUM  text
+*      <--P_LV_DATUM  text
+*----------------------------------------------------------------------*
+FORM FORMATEAR_FECHA_ACTUAL  USING    P_SY_DATUM
+                      CHANGING P_LV_DATUM.
+  DATA: LV_EXT_DATUM TYPE STRING,
+        LV_DAY       TYPE STRING,
+        LV_MONTH     TYPE STRING,
+        LV_YEAR      TYPE STRING.
+  CALL FUNCTION 'CONVERSION_EXIT_LDATE_OUTPUT'
+    EXPORTING
+      INPUT  = P_SY_DATUM
+    IMPORTING
+      OUTPUT = LV_EXT_DATUM.
+  SPLIT LV_EXT_DATUM AT SPACE INTO: LV_DAY LV_MONTH LV_YEAR.
+  CONCATENATE LV_DAY 'de' LV_MONTH 'del' LV_YEAR INTO P_LV_DATUM SEPARATED BY SPACE.
+  REPLACE ALL OCCURRENCES OF '.' IN P_LV_DATUM WITH ''.
+ENDFORM.                    " FORMATEAR_FECHA_ACTUAL
+
+" CALC_CUADRO_VENC
+
+*&---------------------------------------------------------------------*
+*&      Form  CALC_CUADRO_VENC
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*      -->P_IT_AB  text
+*      -->P_IT_SBOOK  text
+*----------------------------------------------------------------------*
+FORM CALC_CUADRO_VENC  TABLES   P_IT_AB LIKE IT_AB[]
+                                P_IT_FAC STRUCTURE IT_FAC.
+  DATA LV_TOTAL TYPE I.
+  DATA LV_COL1  TYPE I.
+  DATA LV_COL2  TYPE I.
+  DATA LV_COL3  TYPE I.
+  DATA LV_COL4  TYPE I.
+  DATA LV_COL5  TYPE I.
+  DATA LS_VBAK LIKE LINE OF P_IT_FAC.
+
+  LOOP AT P_IT_FAC INTO LS_VBAK.
+    LV_TOTAL = LV_DT_ACTUAL - ( LS_VBAK-ZFBDT + LS_VBAK-ZBD1T ).
+    IF ( LV_TOTAL > 0 AND LS_VBAK-SHKZG EQ 'S' ).
+      PERFORM GET_CONV_TO_EXT USING LS_VBAK-WAERS LS_VBAK-WRBTR CHANGING LV_CURR .
+      IF LV_TOTAL <=  RASTBIS1 AND RASTBIS1 IS NOT INITIAL.
+        LV_COL1 = LV_COL1 + LV_CURR.
+      ELSEIF LV_TOTAL <=  RASTBIS2 AND RASTBIS2 IS NOT INITIAL.
+        LV_COL2 = LV_COL2 + LV_CURR.
+      ELSEIF LV_TOTAL <=  RASTBIS3 AND RASTBIS3 IS NOT INITIAL.
+        LV_COL3 = LV_COL3 + LV_CURR.
+      ELSEIF RASTBIS3 IS NOT INITIAL.
+        LV_COL4 = LV_COL4 + LV_CURR.
+      ENDIF.
+    ENDIF.
+  ENDLOOP.
+  CLEAR LS_MOV.
+
+  LS_MOV-RAST1 = LV_COL1.
+  LS_MOV-RAST2 = LV_COL2.
+  LS_MOV-RAST3 = LV_COL3.
+  LS_MOV-RAST4 = LV_COL4.
+
+  APPEND LS_MOV TO P_IT_AB.
+  RASTBIS1_R1 = RASTBIS1 + 1.
+  RASTBIS2_R2 = RASTBIS2 + 1.
+  RASTBIS3_R3 = RASTBIS3 + 1.
+ENDFORM.                    " CALC_CUADRO_VENC
+
+*&---------------------------------------------------------------------*
+*&      Form  VALIDA_CAMPOS_C_VENC
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*      <--P_FLAG  text
+*----------------------------------------------------------------------*
+FORM VALIDA_CAMPOS_C_VENC  CHANGING P_FLAG.
+  P_FLAG = 'true'.
+  IF RASTBIS1 IS INITIAL.
+    P_FLAG = 'false'.
+    MESSAGE 'El primer cuadro de vencimiento es obligatorio.' TYPE 'S'.
+  ENDIF.
+  IF RASTBIS1 IS NOT INITIAL AND
+     RASTBIS2 IS NOT INITIAL AND
+     RASTBIS3 IS NOT INITIAL.
+    IF RASTBIS1 < RASTBIS2 AND RASTBIS2 < RASTBIS3.
+      P_FLAG = 'true'.
+    ELSE.
+      P_FLAG = 'false'.
+      WRITE 'Los cuadros de vencimiento deben ir de menor a mayor tiempo.'.
+      " EXIT.
+    ENDIF.
+  ENDIF.
+ENDFORM.                    " ALIDA_CAMPOS_C_VENC
+
+*&---------------------------------------------------------------------*
+*&      Form  GENERAR_ARCHIVO
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*      -->P_LV_FILENAME  text
+*----------------------------------------------------------------------*
+FORM GENERAR_ARCHIVO  USING    P_LV_FILENAME.
+
+
+  CALL FUNCTION 'SSF_GET_DEVICE_TYPE'
+    EXPORTING
+      I_LANGUAGE    = V_LANGUAGE
+      I_APPLICATION = 'SAPDEFAULT'
+    IMPORTING
+      E_DEVTYPE     = V_E_DEVTYPE.
+  ST_OUTPUT_OPTIONS-TDPRINTER = V_E_DEVTYPE.
+  ST_CONTROL_PARAMETERS-NO_DIALOG = 'X'.
+  ST_CONTROL_PARAMETERS-GETOTF = 'X'.
+
+
+* Obtiene el nombre del modulo de función
+  CALL FUNCTION 'SSF_FUNCTION_MODULE_NAME'
+    EXPORTING
+      FORMNAME           = 'ZFIF_ESTADO_CARTERA'
+    IMPORTING
+      FM_NAME            = LV_FUNCTION
+    EXCEPTIONS
+      NO_FORM            = 1
+      NO_FUNCTION_MODULE = 2
+      OTHERS             = 3.
+  IF SY-SUBRC <> 0.
+    MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+            WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+  ENDIF.
+
+
+* LLama al reporte
+  IF SY-SUBRC = 0.
+    CALL FUNCTION LV_FUNCTION
+      EXPORTING
+        ANRED                = DKADR-ANRED
+        NAME1                = DKADR-NAME1
+        NAME2                = DKADR-NAME2
+        STRAS                = DKADR-STRAS
+        ORT01                = DKADR-ORT01
+        LDATE                = LV_DATUM
+        RASTBIS1             = RASTBIS1
+        RASTBIS2             = RASTBIS2
+        RASTBIS3             = RASTBIS3
+        RASTBIS4             = 0
+        LDATE2               = LV_DT_ACTUAL
+        LV_TFAC_V            = LV_TFAC_V
+        LV_TFAC_NV           = LV_TFAC_NV
+        RASTBIS1_R1          = RASTBIS1_R1
+        RASTBIS2_R2          = RASTBIS2_R2
+        RASTBIS3_R3          = RASTBIS3_R3
+        CONTROL_PARAMETERS   = ST_CONTROL_PARAMETERS
+        OUTPUT_OPTIONS       = ST_OUTPUT_OPTIONS
+      IMPORTING
+        DOCUMENT_OUTPUT_INFO = ST_DOCUMENT_OUTPUT_INFO
+        JOB_OUTPUT_INFO      = ST_JOB_OUTPUT_INFO
+        JOB_OUTPUT_OPTIONS   = ST_JOB_OUTPUT_OPTIONS
+      TABLES
+        GS_SBOOK             = IT_FAC_V
+        GS_SBOOK2            = IT_FAC_NV
+        GS_SBOOK3            = IT_AB
+      EXCEPTIONS
+        FORMATTING_ERROR     = 1
+        INTERNAL_ERROR       = 2
+        SEND_ERROR           = 3
+        USER_CANCELED        = 4
+        OTHERS               = 5.
+    IF SY-SUBRC <> 0.
+      MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+              WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+    ENDIF.
+  ENDIF.
+
+
+* Convierte de OTF a PDF
+  CALL FUNCTION 'CONVERT_OTF_2_PDF'
+    IMPORTING
+      BIN_FILESIZE           = V_BIN_FILESIZE
+    TABLES
+      OTF                    = ST_JOB_OUTPUT_INFO-OTFDATA
+      DOCTAB_ARCHIVE         = IT_DOCS
+      LINES                  = IT_LINES
+    EXCEPTIONS
+      ERR_CONV_NOT_POSSIBLE  = 1
+      ERR_OTF_MC_NOENDMARKER = 2
+      OTHERS                 = 3.
+
+
+* Descarga el archivo
+  DATA GV_FILENAME          TYPE STRING.
+  GV_FILENAME = P_LV_FILENAME.
+  MOVE V_FULLPATH TO V_FILENAME.
+  CALL FUNCTION 'GUI_DOWNLOAD'
+    EXPORTING
+      BIN_FILESIZE            = V_BIN_FILESIZE
+      FILENAME                = GV_FILENAME
+      FILETYPE                = 'BIN'
+    TABLES
+      DATA_TAB                = IT_LINES
+    EXCEPTIONS
+      FILE_WRITE_ERROR        = 1
+      NO_BATCH                = 2
+      GUI_REFUSE_FILETRANSFER = 3
+      INVALID_TYPE            = 4
+      NO_AUTHORITY            = 5
+      UNKNOWN_ERROR           = 6
+      HEADER_NOT_ALLOWED      = 7
+      SEPARATOR_NOT_ALLOWED   = 8
+      FILESIZE_NOT_ALLOWED    = 9
+      HEADER_TOO_LONG         = 10
+      DP_ERROR_CREATE         = 11
+      DP_ERROR_SEND           = 12
+      DP_ERROR_WRITE          = 13
+      UNKNOWN_DP_ERROR        = 14
+      ACCESS_DENIED           = 15
+      DP_OUT_OF_MEMORY        = 16
+      DISK_FULL               = 17
+      DP_TIMEOUT              = 18
+      FILE_NOT_FOUND          = 19
+      DATAPROVIDER_EXCEPTION  = 20
+      CONTROL_FLUSH_ERROR     = 21
+      OTHERS                  = 22.
+
+ENDFORM.                    " GENERAR_ARCHIVO
+*&---------------------------------------------------------------------*
+*&      Form  GET_CONV_TO_EXT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*      -->P_LS_VBAK_WAERS  text
+*      -->P_LS_VBAK_WRBTR  text
+*      <--P_LV_CURR  text
+*----------------------------------------------------------------------*
+FORM GET_CONV_TO_EXT  USING    P_LS_VBAK_WAERS
+                               P_LS_VBAK_WRBTR
+                      CHANGING P_LV_CURR.
+  CALL FUNCTION 'BAPI_CURRENCY_CONV_TO_EXTERNAL'
+    EXPORTING
+      CURRENCY        = P_LS_VBAK_WAERS
+      AMOUNT_INTERNAL = P_LS_VBAK_WRBTR
+    IMPORTING
+      AMOUNT_EXTERNAL = P_LV_CURR.
+ENDFORM.                    " GET_CONV_TO_EXT
+*&---------------------------------------------------------------------*
+*&      Form  VALID_XBLNR_TEXT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*      -->P_LS_VBAK_XBLNR  text
+*      -->P_LS_VBAK_ZUONR  text
+*      <--P_LV_XBLNR  text
+*----------------------------------------------------------------------*
+FORM VALID_XBLNR_TEXT  USING    P_LS_VBAK_XBLNR
+                                P_LS_VBAK_ZUONR
+                       CHANGING P_LV_XBLNR.
+  DATA G_TYPE TYPE DD01V-DATATYPE.
+  CALL FUNCTION 'NUMERIC_CHECK'
+    EXPORTING
+      STRING_IN = P_LS_VBAK_XBLNR
+    IMPORTING
+      HTYPE     = G_TYPE.
+  IF ( ( G_TYPE EQ 'NUMC' ) OR ( P_LS_VBAK_XBLNR+0(2) EQ 'DO' ) ).
+    P_LV_XBLNR = P_LS_VBAK_XBLNR.
+  ELSE.
+    CONCATENATE 'DO_' P_LS_VBAK_ZUONR INTO P_LV_XBLNR.
+  ENDIF.
+ENDFORM.                    " VALID_XBLNR_TEXT
+
+
+
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+
+*&---------------------------------------------------------------------*
+*& Report  ZFIR_PORFIN
+*&
+*&---------------------------------------------------------------------*
+*& Programa    : ZFIR_PORFIN
+*& Funcional   : Cesar Gónzalez
+*& Autor       : Julian Moreno Aguilar
+*& Descripción : Interfaz PORFIN
+*& Fecha       : Diciembre 09 de 2015
+*&---------------------------------------------------------------------*
+
+REPORT  ZFIR_PORFIN.
+
+DATA LV_TOTAL_UP TYPE I VALUE 0.
+DATA WA_ZTFIPORFIN TYPE ZTFIPORFIN.
+DATA: BEGIN OF TI_PORFIN OCCURS 0,
+       CTA_ALT_OLD(10) TYPE C,
+       CTA_ALT_NEW(10)  TYPE C,
+END OF TI_PORFIN.
+
+
+SELECTION-SCREEN BEGIN OF BLOCK B0 WITH FRAME TITLE TEXT-002.
+PARAMETERS P_DIR1 LIKE RLGRAP-FILENAME DEFAULT 'c:\'.
+SELECTION-SCREEN END OF BLOCK B0.
+
+
+DATA W_FILE  TYPE STRING.
+W_FILE = P_DIR1.
+CALL FUNCTION 'GUI_UPLOAD'
+  EXPORTING
+    FILENAME                = W_FILE
+    FILETYPE                = 'ASC'
+    HAS_FIELD_SEPARATOR     = 'X'
+  TABLES
+    DATA_TAB                = TI_PORFIN
+  EXCEPTIONS
+    FILE_OPEN_ERROR         = 1
+    FILE_READ_ERROR         = 2
+    NO_BATCH                = 3
+    GUI_REFUSE_FILETRANSFER = 4
+    INVALID_TYPE            = 5
+    NO_AUTHORITY            = 6
+    UNKNOWN_ERROR           = 7
+    BAD_DATA_FORMAT         = 8
+    HEADER_NOT_ALLOWED      = 9
+    SEPARATOR_NOT_ALLOWED   = 10
+    HEADER_TOO_LONG         = 11
+    UNKNOWN_DP_ERROR        = 12
+    ACCESS_DENIED           = 13
+    DP_OUT_OF_MEMORY        = 14
+    DISK_FULL               = 15
+    DP_TIMEOUT              = 16
+    OTHERS                  = 17.
+IF SY-SUBRC <> 0.
+  WRITE: TEXT-008,SY-SUBRC,' al cargar el archivo de Entrada',/.
+  STOP.
+ENDIF.
+
+
+LOOP AT TI_PORFIN.
+  WA_ZTFIPORFIN-CTA_ALT_OLD = TI_PORFIN-CTA_ALT_OLD.
+  WA_ZTFIPORFIN-CTA_ALT_NEW = TI_PORFIN-CTA_ALT_NEW.
+  MODIFY ZTFIPORFIN FROM WA_ZTFIPORFIN.
+  LV_TOTAL_UP = LV_TOTAL_UP + 1.
+ENDLOOP.
+WRITE : / 'TOTAL DE REGISTROS ACTUALIZADOS:',LV_TOTAL_UP .
+
+
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+
+*&---------------------------------------------------------------------*
+*& Report  ZJMTEST9 - programa con botones crear, modificar, eliminar, listar
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  ZJMTEST9.
+
+
+
+TABLES: T030, SKAT, SSCRFIELDS.
+
+
+SELECTION-SCREEN BEGIN OF BLOCK BLOCK1 WITH FRAME
+                                     TITLE TEXT-001.
+
+
+PARAMETERS P_BUKRS  LIKE BKORM-BUKRS DEFAULT 'FON2' .      " Sociedad
+PARAMETERS P_HKONT  LIKE BSID-HKONT DEFAULT '1370050013' .      " Cuenta de mayor de la contabilidad principal
+PARAMETERS P_BLART  LIKE BSID-BLART DEFAULT 'LF' .      " Clase de documento
+PARAMETERS P_START TYPE SY-DATUM.
+PARAMETERS END TYPE SY-DATUM.
+PARAMETERS:P_ZSOLL TYPE AZINSSATZ .      " Clase de documento
+
+"select-options : s_date for sy-datum.
+
+
+
+*SELECT-OPTIONS: P_KTOPL FOR T030-KTOPL,
+*                P_KOMOK FOR T030-KOMOK,
+*                P_KTOSL FOR T030-KTOSL.
+
+SELECTION-SCREEN SKIP.
+*SELECTION-SCREEN FUNCTION KEY 1.  "Adds button to application toolbar
+
+* Declaration of sel screen buttons
+SELECTION-SCREEN BEGIN OF LINE.
+SELECTION-SCREEN PUSHBUTTON (10) W_BUTTON USER-COMMAND BUT1.
+SELECTION-SCREEN PUSHBUTTON (10) W_BUT2 USER-COMMAND BUT2.
+SELECTION-SCREEN PUSHBUTTON (10) W_BUT3 USER-COMMAND BUT3.
+SELECTION-SCREEN PUSHBUTTON (10) W_BUT4 USER-COMMAND BUT4.
+
+
+
+
+
+SELECTION-SCREEN END OF LINE.
+
+*SELECT-OPTIONS: P_KONTS FOR T030-KONTS,
+*                P_BKLAS FOR T030-BKLAS.
+
+PARAMETER: GD_UCOMM LIKE SY-UCOMM DEFAULT 'BUT1' NO-DISPLAY.
+
+SELECTION-SCREEN END OF BLOCK BLOCK1.
+
+TYPES: BEGIN OF T_T030,
+   KTOPL TYPE T030-KTOPL,
+   KONTS TYPE T030-KONTS,
+   TXT20 TYPE SKAT-TXT20,
+   BKLAS TYPE T030-BKLAS,
+   BKBEZ TYPE T025T-BKBEZ,
+  END OF T_T030.
+
+DATA: IT_T030 TYPE STANDARD TABLE OF T_T030 INITIAL SIZE 0,
+      WA_T030 TYPE T_T030.
+
+DATA: GD_REPSIZE TYPE I VALUE '83'.
+
+
+************************************************************************
+*INITIALIZATION.
+INITIALIZATION.
+* Add displayed text string to buttons
+  W_BUTTON = 'Guardar'.
+  W_BUT2 = 'Modificar'.
+  W_BUT3 = 'Eliminar'.
+  W_BUT4 = 'Listar ALV'.
+
+
+************************************************************************
+*AT SELECTION-SCREEN.
+AT SELECTION-SCREEN.
+* Check if buttons have been
+  IF SSCRFIELDS-UCOMM EQ 'BUT1'.
+    GD_UCOMM = 'BUT1'.
+    "CLEAR: P_BKLAS.
+    "REFRESH: P_BKLAS.
+
+    PERFORM SAVE_REG.
+
+    "MESSAGE E208(00) WITH 'Error sdfsdffffffffff BUT1 ' .
+
+  ELSEIF SSCRFIELDS-UCOMM EQ 'BUT2'.
+*    CLEAR: P_KONTS.
+*    REFRESH: P_KONTS.
+    GD_UCOMM = 'BUT2'.
+
+
+    PERFORM UPDATE_REG.
+
+    "MESSAGE E208(00) WITH 'Error sdfsdfffffffffff BUT2 ' .
+
+
+  ELSEIF SSCRFIELDS-UCOMM EQ 'BUT3'.
+*    CLEAR: P_KONTS.
+*    REFRESH: P_KONTS.
+    GD_UCOMM = 'BUT2'.
+
+
+    PERFORM DELETE_REG.
+
+    "MESSAGE E208(00) WITH 'Error sdfsdfffffffffff BUT3' .
+
+
+  ELSEIF SSCRFIELDS-UCOMM EQ 'BUT4'.
+*    CLEAR: P_KONTS.
+*    REFRESH: P_KONTS.
+    GD_UCOMM = 'BUT2'.
+
+
+    PERFORM PRINT_ALV.
+
+
+    "MESSAGE E208(00) WITH 'Error sdfsdfffffffffff BUT4 ' .
+
+
+
+
+  ENDIF.
+
+
+************************************************************************
+*AT SELECTION-SCREEN OUTPUT.
+AT SELECTION-SCREEN OUTPUT.
+
+  LOOP AT SCREEN.
+    IF SCREEN-NAME = 'P_BUKRS'.
+      SCREEN-INPUT = '0'.
+      MODIFY SCREEN.
+    ENDIF.
+
+    IF SCREEN-NAME = 'P_HKONT'.
+      SCREEN-INPUT = '0'.
+      MODIFY SCREEN.
+    ENDIF.
+
+
+    IF SCREEN-NAME = 'P_BLART'.
+      SCREEN-INPUT = '0'.
+      MODIFY SCREEN.
+    ENDIF.
+
+
+  ENDLOOP.
+
+
+
+
+*  IF GD_UCOMM EQ 'BUT1'.
+*    LOOP AT SCREEN.
+*      IF SCREEN-NAME CS 'P_KONTS'.
+*        SCREEN-ACTIVE = 1.
+*      ELSEIF SCREEN-NAME CS 'P_BKLAS'.
+*        SCREEN-ACTIVE = 0.
+*      ENDIF.
+*      "MODIFY SCREEN.
+*    ENDLOOP.
+*
+*
+*
+*  ELSEIF GD_UCOMM EQ 'BUT2'.
+*    LOOP AT SCREEN.
+*      IF SCREEN-NAME CS 'P_KONTS'.
+*        SCREEN-ACTIVE = 0.
+*      ELSEIF SCREEN-NAME CS 'P_BKLAS'.
+*        SCREEN-ACTIVE = 1.
+*      ENDIF.
+*      "MODIFY SCREEN.
+*    ENDLOOP.
+*  ENDIF.
+
+*&---------------------------------------------------------------------*
+*&      Form  PRINT_ALV
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+FORM PRINT_ALV .
+
+  DATA ALV TYPE REF TO CL_SALV_TABLE.
+  DATA FLIGHT_SCHEDULE TYPE STANDARD TABLE OF SPFLI.
+  DATA MESSAGE TYPE REF TO CX_SALV_MSG.
+  DATA LAYOUT_SETTINGS TYPE REF TO CL_SALV_LAYOUT.
+  DATA LAYOUT_KEY      TYPE SALV_S_LAYOUT_KEY.
+  DATA COLUMNS TYPE REF TO CL_SALV_COLUMNS_TABLE.
+  DATA FUNCTIONS TYPE REF TO CL_SALV_FUNCTIONS_LIST.
+
+
+  SELECT * FROM SPFLI INTO TABLE FLIGHT_SCHEDULE UP TO 100 ROWS.
+
+
+  TRY.
+      CL_SALV_TABLE=>FACTORY(
+      IMPORTING
+        R_SALV_TABLE = ALV
+      CHANGING
+        T_TABLE      = FLIGHT_SCHEDULE ).
+    CATCH CX_SALV_MSG INTO MESSAGE.
+  ENDTRY.
+
+
+  "DEFINIR LAYAOUT
+  LAYOUT_SETTINGS = ALV->GET_LAYOUT( ).
+  LAYOUT_KEY-REPORT = SY-REPID.
+  LAYOUT_SETTINGS->SET_KEY( LAYOUT_KEY ).
+  LAYOUT_SETTINGS->SET_SAVE_RESTRICTION( IF_SALV_C_LAYOUT=>RESTRICT_NONE ).
+
+
+  "OPTIMIZA LAS COLUMNAS
+  COLUMNS = ALV->GET_COLUMNS( ).
+  COLUMNS->SET_OPTIMIZE( ).
+
+
+  "DEFINE TODAS LAS FUNCIONES
+  FUNCTIONS = ALV->GET_FUNCTIONS( ).
+  FUNCTIONS->SET_ALL( ).
+
+  "IMPRIME EL ALV
+  ALV->DISPLAY( ).
+
+
+ENDFORM.                    " PRINT_ALV
+*&---------------------------------------------------------------------*
+*&      Form  SAVE_REG
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM SAVE_REG .
+
+*  DATA BEGIN OF IT_BSID OCCURS 0.
+*          INCLUDE STRUCTURE BSID.
+*  DATA END OF IT_BSID.
+  "DATA IT_BSID TYPE STANDARD TABLE OF ST_BSID.
+
+
+*  TYPES:
+*  BEGIN OF ST_BSID,
+*    INCLUDE TYPE BSID,
+*  END OF ST_BSID.
+*  DATA IT_BSID TYPE STANDARD TABLE OF ST_BSID WITH HEADER LINE.
+
+
+  DATA IT_SPFLI TYPE STANDARD TABLE OF SPFLI WITH HEADER LINE.
+
+
+  "SELECT * INTO TABLE IT_BSID FROM BSID WHERE BUKRS = P_BUKRS AND HKONT = P_HKONT AND BLART = P_BLART.
+  SELECT * INTO TABLE IT_SPFLI  FROM SPFLI
+    .
+
+  LOOP AT IT_SPFLI.
+    WRITE: / IT_SPFLI-CONNID.
+  ENDLOOP.
+
+
+
+
+
+ENDFORM.                    " SAVE_REG
+*&---------------------------------------------------------------------*
+*&      Form  UPDATE_REG
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM UPDATE_REG .
+
+ENDFORM.                    " UPDATE_REG
+*&---------------------------------------------------------------------*
+*&      Form  DELETE_REG
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM DELETE_REG .
+
+ENDFORM.                    " DELETE_REG
+
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+
+
+*&---------------------------------------------------------------------*
+*& Report  ZJMTEST17
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  ZJMTEST17.
+
+TYPES:
+BEGIN OF TY_EST_BALANCE,
+  ID LIKE FAGL_011PC-ID,
+  ERGSL LIKE FAGL_011PC-ERGSL,
+  PARENT LIKE FAGL_011PC-PARENT,
+  CHILD LIKE FAGL_011PC-CHILD,
+  NEXTN LIKE FAGL_011PC-NEXTN,
+  TXT45 LIKE FAGL_011QT-TXT45,
+  STUFE LIKE FAGL_011PC-STUFE,
+  TOTAL TYPE I,
+END OF TY_EST_BALANCE.
+
+DATA IT_EST_BALANCE TYPE STANDARD TABLE OF TY_EST_BALANCE WITH HEADER LINE.
+DATA IT_EST_BALANCE_TOTAL TYPE STANDARD TABLE OF TY_EST_BALANCE WITH HEADER LINE.
+
+
+
+SELECT FAGL_011PC~ID
+  FAGL_011PC~ERGSL
+  FAGL_011PC~PARENT
+  FAGL_011PC~CHILD
+  FAGL_011PC~NEXTN
+  FAGL_011QT~TXT45
+  FAGL_011PC~STUFE
+  INTO CORRESPONDING FIELDS OF TABLE IT_EST_BALANCE
+  FROM FAGL_011PC INNER JOIN FAGL_011QT
+  ON ( FAGL_011PC~VERSN = FAGL_011QT~VERSN AND FAGL_011PC~ERGSL = FAGL_011QT~ERGSL )
+  WHERE FAGL_011PC~VERSN = 'NIIF'
+  AND FAGL_011QT~TXTYP ='K'
+  AND ( FAGL_011PC~STUFE EQ '03' OR FAGL_011PC~STUFE EQ '04' )
+  "AND FAGL_011PC~STUFE BETWEEN '02' AND '04'
+  .
+
+LOOP AT IT_EST_BALANCE WHERE STUFE EQ '04'.
+  IT_EST_BALANCE-TOTAL = 1.
+  MODIFY IT_EST_BALANCE.
+ENDLOOP.
+
+LOOP AT IT_EST_BALANCE.
+  WRITE:/ IT_EST_BALANCE-ID,IT_EST_BALANCE-TXT45,IT_EST_BALANCE-STUFE,IT_EST_BALANCE-PARENT,IT_EST_BALANCE-TOTAL.
+ENDLOOP.
+
+LOOP AT IT_EST_BALANCE.
+  IT_EST_BALANCE_TOTAL-STUFE = IT_EST_BALANCE-STUFE.
+  IT_EST_BALANCE_TOTAL-PARENT = IT_EST_BALANCE-PARENT.
+  IT_EST_BALANCE_TOTAL-TOTAL = IT_EST_BALANCE-TOTAL.
+  COLLECT IT_EST_BALANCE_TOTAL.
+ENDLOOP.
+
+WRITE:/ '**************************************'.
+WRITE:/ '**************************************'.
+WRITE:/ '**************************************'.
+
+
+
+LOOP AT IT_EST_BALANCE_TOTAL.
+  WRITE : / IT_EST_BALANCE_TOTAL-ERGSL,IT_EST_BALANCE_TOTAL-PARENT,IT_EST_BALANCE_TOTAL-TOTAL.
+ENDLOOP.
+
+
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+
+*&---------------------------------------------------------------------*
+*& Report  ZJMTEST18
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  ZJMTEST18.
+
+
+
+
+
+
+
+TABLES:MARC,T011.
+
+DATA: BEGIN OF I011Z OCCURS 0.
+        INCLUDE STRUCTURE RF011Z.
+DATA: END OF I011Z.
+
+DATA: BEGIN OF X011P OCCURS 250.
+        INCLUDE STRUCTURE RF011P.
+DATA: END OF X011P.
+
+
+
+PARAMETERS: P_KTOPL LIKE SKAT-KTOPL DEFAULT 'PCCC' OBLIGATORY. " Plan de cuentas
+SELECT-OPTIONS : S_PRCTR FOR MARC-PRCTR. " OBLIGATORY.
+
+TYPES:
+BEGIN OF TY_EST_BALANCE,
+
+  ID LIKE FAGL_011PC-ID,
+  ERGSL LIKE FAGL_011PC-ERGSL,
+  PARENT LIKE FAGL_011PC-PARENT,
+  CHILD LIKE FAGL_011PC-CHILD,
+  NEXTN LIKE FAGL_011PC-NEXTN,
+
+  TXT45 LIKE FAGL_011QT-TXT45,
+
+END OF TY_EST_BALANCE.
+
+
+
+DATA IT_EST_BALANCE TYPE STANDARD TABLE OF TY_EST_BALANCE WITH HEADER LINE.
+
+
+DATA:  BEGIN OF IT_CUENTAS OCCURS 0,
+*          NIV_1(01),           "nivel uno, cuenta mayor
+*          NIV_2(03),           "nivel dos, sub-ctas
+*          NIV_3(05),           "nivel tres, sub-sub-cta
+*          NIV_4(07),           "nivel tres, sub-sub-cta sub-sub-sub
+*          NIV_5(07),           "nivel tres, sub-sub-cta sub-sub-sub
+          "PRKEY(20),
+          "STUFE(2),
+*          ERGSL                LIKE X011Q-ERGSL,
+*          TXTYP                LIKE X011Q-TXTYP,
+          "RCOMP                LIKE FAGLFLEXT-RBUKRS,
+          PRCTR                LIKE FAGLFLEXT-PRCTR, "Centro de beneficio
+          ALTKT                LIKE SKB1-ALTKT,  "Cuenta alternativa
+          RACCT(10) ,                            "Cuenta Mayor
+          TXT45(45),                             " Texto del nivel
+          TXT50M               LIKE SKAT-TXT50, "Ttexto de la cuenta
+          HBKID                LIKE SKB1-HBKID,   "Banco propio
+          MITKZ                LIKE SKB1-MITKZ,  "Indicador de cuenta
+
+          INICIAL_HSL          LIKE FAGLFLEXT-HSL01,
+          DEBE_HSL             LIKE FAGLFLEXT-HSL01,
+          HABER_HSL            LIKE FAGLFLEXT-HSL01,
+          FINAL_HSL            LIKE FAGLFLEXT-HSL01,
+
+          KTOPL LIKE SKAT-KTOPL  ,
+
+
+          RYEAR LIKE FAGLFLEXT-RYEAR
+
+          .
+
+"INCLUDE  STRUCTURE  FAGLFLEXT.
+
+DATA:  END   OF IT_CUENTAS.
+
+
+
+
+DATA : BEGIN OF TABLA  OCCURS 0 .
+
+INCLUDE  STRUCTURE  SKAT.
+"INCLUDE  STRUCTURE  SKB1.
+INCLUDE  STRUCTURE  FAGLFLEXT.
+
+DATA:  END   OF TABLA.
+
+
+DATA:  BEGIN OF REL_SEIS OCCURS 0,
+          ALTKT   LIKE SKB1-ALTKT,
+          ERGSL   LIKE X011P-ERGSL,
+          MITKZ   LIKE SKB1-MITKZ,
+          INICIAL_HSL LIKE FAGLFLEXT-HSL01,
+          DEBE_HSL LIKE FAGLFLEXT-HSL01,
+          HABER_HSL LIKE FAGLFLEXT-HSL01,
+          FINAL_HSL LIKE FAGLFLEXT-HSL01,
+          RYEAR LIKE FAGLFLEXT-RYEAR
+  .
+DATA:  END   OF REL_SEIS.
+
+
+
+
+
+"------------------------------------------------------------------------------------------
+"------------------------------------------------------------------------------------------
+"------------------------------------------------------------------------------------------
+
+
+
+
+SELECT FAGL_011PC~ID
+  FAGL_011PC~ERGSL
+  FAGL_011PC~PARENT
+  FAGL_011PC~CHILD
+  FAGL_011PC~NEXTN
+  FAGL_011QT~TXT45
+  INTO CORRESPONDING FIELDS OF TABLE IT_EST_BALANCE
+  FROM FAGL_011PC INNER JOIN FAGL_011QT
+  ON ( FAGL_011PC~VERSN = FAGL_011QT~VERSN AND FAGL_011PC~ERGSL = FAGL_011QT~ERGSL )
+  WHERE FAGL_011PC~VERSN = 'NIIF'
+  AND FAGL_011QT~TXTYP ='K'.
+
+
+
+
+SELECT *
+INTO CORRESPONDING FIELDS OF TABLE IT_CUENTAS
+FROM SKAT
+INNER JOIN SKB1
+ON SKAT~SAKNR = SKB1~SAKNR
+INNER JOIN FAGLFLEXT
+ON ( SKAT~SAKNR = FAGLFLEXT~RACCT )
+WHERE
+FAGLFLEXT~RYEAR    EQ '2009' AND
+FAGLFLEXT~RLDNR  EQ '1L'
+AND   FAGLFLEXT~RRCTY  EQ '0'
+AND   FAGLFLEXT~RVERS  EQ '001'
+"AND   SKB1~BUKRS       EQ 'FON1'
+AND   SKAT~KTOPL       EQ P_KTOPL
+AND   SKAT~SPRAS       EQ SY-LANGU
+AND   SKB1~SAKNR NOT BETWEEN '40000000000' AND '7999999999'
+"AND   FAGLFLEXT~PRCTR  IN S_PRCTR
+  .
+
+
+SORT IT_CUENTAS ASCENDING.
+
+
+
+
+CALL FUNCTION 'FI_IMPORT_BALANCE_SHEET_POS'
+  EXPORTING
+    VERSION           = 'NIIF'
+  TABLES
+    I011Z             = I011Z
+    X011P             = X011P
+*    X011S             = X011S
+*    X011V             = X011V
+  EXCEPTIONS
+    NEW_BALANCE_SHEET = 04.
+
+SORT I011Z BY ERGSO ASCENDING.
+
+
+
+
+
+
+DATA TOTAL_LINES2 TYPE I.
+TOTAL_LINES2 = 0.
+DESCRIBE TABLE IT_CUENTAS LINES TOTAL_LINES2.
+
+LOOP AT IT_CUENTAS .
+  LOOP AT I011Z.
+    IF IT_CUENTAS-ALTKT BETWEEN I011Z-VONKT AND I011Z-BILKT.
+      READ TABLE X011P WITH KEY ERGSL = I011Z-ERGHB.
+      REL_SEIS-ALTKT = IT_CUENTAS-ALTKT.
+      REL_SEIS-ERGSL = X011P-ERGSL.
+      REL_SEIS-MITKZ = IT_CUENTAS-MITKZ.
+      REL_SEIS-INICIAL_HSL = IT_CUENTAS-INICIAL_HSL.
+      REL_SEIS-DEBE_HSL = IT_CUENTAS-DEBE_HSL.
+      REL_SEIS-HABER_HSL = IT_CUENTAS-HABER_HSL.
+      REL_SEIS-FINAL_HSL = IT_CUENTAS-FINAL_HSL.
+      REL_SEIS-RYEAR = IT_CUENTAS-RYEAR.
+      APPEND REL_SEIS.
+      "EXIT.
+    ENDIF.
+  ENDLOOP.
+
+*  IF SY-TABIX >= TOTAL_LINES2.
+*    EXIT.
+*  ENDIF.
+
+ENDLOOP.
+
+
+
+
+DATA FLAG TYPE I.
+FLAG = 0.
+DATA TOTAL_LINES TYPE I.
+TOTAL_LINES = 0.
+DESCRIBE TABLE IT_CUENTAS LINES TOTAL_LINES.
+DATA CON_SEIS TYPE I.
+CON_SEIS = 0.
+DATA C_ALTKT LIKE SKB1-ALTKT.
+"DELETE ADJACENT DUPLICATES FROM REL_SEIS.
+
+
+
+
+DATA TOTAL_REL_SEIS TYPE I.
+TOTAL_REL_SEIS = 0.
+DESCRIBE TABLE REL_SEIS LINES TOTAL_REL_SEIS.
+
+LOOP AT IT_EST_BALANCE.
+  WRITE:/ IT_EST_BALANCE-ERGSL,' - ',IT_EST_BALANCE-TXT45.
+  LOOP AT REL_SEIS.
+    IF REL_SEIS-ERGSL EQ IT_EST_BALANCE-ERGSL.
+      WRITE:/ '=',REL_SEIS-RYEAR,REL_SEIS-ALTKT,REL_SEIS-ERGSL,REL_SEIS-MITKZ,REL_SEIS-DEBE_HSL, REL_SEIS-HABER_HSL,REL_SEIS-INICIAL_HSL,REL_SEIS-FINAL_HSL.
+    ENDIF.
+    IF SY-TABIX >= TOTAL_REL_SEIS.
+      EXIT.
+    ENDIF.
+    CONTINUE.
+  ENDLOOP.
+ENDLOOP.
+
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+
+
+FORM GENERATE_ALV_REPORT .
+
+  DATA ALV TYPE REF TO CL_SALV_TABLE.
+  DATA FLIGHT_SCHEDULE TYPE STANDARD TABLE OF SPFLI.
+  DATA MESSAGE TYPE REF TO CX_SALV_MSG.
+  DATA LAYOUT_SETTINGS TYPE REF TO CL_SALV_LAYOUT.
+  DATA LAYOUT_KEY      TYPE SALV_S_LAYOUT_KEY.
+  DATA COLUMNS TYPE REF TO CL_SALV_COLUMNS_TABLE.
+  DATA FUNCTIONS TYPE REF TO CL_SALV_FUNCTIONS_LIST.
+  DATA LR_COLUMN TYPE REF TO CL_SALV_COLUMN_TABLE.
+
+
+  TRY.
+      CL_SALV_TABLE=>FACTORY(
+      IMPORTING
+        R_SALV_TABLE = ALV
+      CHANGING
+        T_TABLE      = L_ITAB ).
+    CATCH CX_SALV_MSG INTO MESSAGE.
+  ENDTRY.
+
+
+* Define el Layaout
+  LAYOUT_SETTINGS = ALV->GET_LAYOUT( ).
+  LAYOUT_KEY-REPORT = SY-REPID.
+  LAYOUT_SETTINGS->SET_KEY( LAYOUT_KEY ).
+  LAYOUT_SETTINGS->SET_SAVE_RESTRICTION( IF_SALV_C_LAYOUT=>RESTRICT_NONE ).
+
+
+* Optimiza las columnas
+  COLUMNS = ALV->GET_COLUMNS( ).
+  COLUMNS->SET_OPTIMIZE( ).
+
+
+* Define el encabezado
+  PERFORM SET_TOP_OF_PAGE CHANGING ALV.
+
+
+* Columnas del reporte alv
+  PERFORM DEFINE_REPORT_COLUMNS.
+
+
+* Define las columas a mostrar en el reporte alv
+  PERFORM DEFINE_REPORT_COLUMNS_VIS.
+  LOOP AT IT_COLUMNS.
+    LR_COLUMN ?= COLUMNS->GET_COLUMN( IT_COLUMNS-COL_ID ).
+    LR_COLUMN->SET_LONG_TEXT( IT_COLUMNS-COL_NAME ).
+    LR_COLUMN->SET_VISIBLE( ABAP_FALSE ).
+    LOOP AT IT_COLUMNS_VIS.
+      IF IT_COLUMNS-COL_ID EQ IT_COLUMNS_VIS-COL_ID.
+        LR_COLUMN ?= COLUMNS->GET_COLUMN( IT_COLUMNS-COL_ID ).
+        LR_COLUMN->SET_LONG_TEXT( IT_COLUMNS-COL_NAME ).
+        LR_COLUMN->SET_VISIBLE( ABAP_TRUE ).
+        EXIT.
+      ENDIF.
+    ENDLOOP.
+  ENDLOOP.
+
+
+* Define todas las funciones
+  FUNCTIONS = ALV->GET_FUNCTIONS( ).
+  FUNCTIONS->SET_ALL( ).
+
+* Imprime el reporte
+  ALV->DISPLAY( ).
+
+
+ENDFORM.                  
+
+FORM SET_TOP_OF_PAGE  CHANGING P_ALV TYPE REF TO CL_SALV_TABLE.
+
+  DATA LO_HEADER  TYPE REF TO CL_SALV_FORM_LAYOUT_GRID.
+  DATA LO_H_LABEL TYPE REF TO CL_SALV_FORM_LABEL.
+  DATA LO_H_FLOW  TYPE REF TO CL_SALV_FORM_LAYOUT_FLOW.
+  DATA LV_DOC TYPE STRING.
+  DATA LV_TOTAL_REG TYPE STRING.
+  DATA LV_LINES TYPE N.
+  CREATE OBJECT LO_HEADER.
+
+  DESCRIBE TABLE L_ITAB LINES LV_LINES.
+
+  CONCATENATE 'Documento Creado:' I_DOCUMENTO INTO LV_DOC SEPARATED BY SPACE.
+  CONCATENATE 'No Total de Registros:' LV_LINES INTO LV_TOTAL_REG SEPARATED BY SPACE.
+
+  LO_H_LABEL = LO_HEADER->CREATE_LABEL( ROW = 1 COLUMN = 1 ).
+  LO_H_LABEL->SET_TEXT( LV_DOC ).
+
+  LO_H_FLOW = LO_HEADER->CREATE_FLOW( ROW = 2  COLUMN = 1 ).
+  LO_H_FLOW->CREATE_TEXT( TEXT = LV_TOTAL_REG ).
+
+  P_ALV->SET_TOP_OF_LIST( LO_HEADER ).
+  P_ALV->SET_TOP_OF_LIST_PRINT( LO_HEADER ).
+
+ENDFORM.   
+
+
+FORM DEFINE_REPORT_COLUMNS .
+
+  WA_COLUMNS-COL_ID = 'CD_INVOICE'.
+  WA_COLUMNS-COL_NAME = 'ID FACTURA'.
+  APPEND WA_COLUMNS TO IT_COLUMNS.
+
+  WA_COLUMNS-COL_ID = 'CD_COFFEE_GROWER'.
+  WA_COLUMNS-COL_NAME = 'ID CAFICULTOR'.
+  APPEND WA_COLUMNS TO IT_COLUMNS.
+
+  WA_COLUMNS-COL_ID = 'TX_DOC_COFFEE_GROWER'.
+  WA_COLUMNS-COL_NAME = 'DOCUMENTO CAFICULTOR'.
+  APPEND WA_COLUMNS TO IT_COLUMNS.
+
+ENDFORM.  
+
+
+FORM DEFINE_REPORT_COLUMNS_VIS .
+
+  WA_COLUMNS_VIS-COL_ID = 'CD_INVOICE'.
+  APPEND  WA_COLUMNS_VIS TO IT_COLUMNS_VIS.
+
+  WA_COLUMNS_VIS-COL_ID = 'TX_DOC_COFFEE_GROWER'.
+  APPEND  WA_COLUMNS_VIS TO IT_COLUMNS_VIS.
+
+ENDFORM.
+
+
+
+
+
+

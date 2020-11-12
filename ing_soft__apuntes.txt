@@ -1,0 +1,37 @@
+
+
+http://enrikusblog.com/sonarqube-analizando-un-proyecto-java/
+
+
+*****************************
+
+
+calidad del producto software
+metricas calidad software
+
+“porcentaje de código duplicado” 
+
+“la complejidad ciclomática”.
+
+
+*****************************
+
+
+Los métodos heurísticos estimación software:
+El método basado en juicio experto
+El método por analogía
+
+
+Los métodos paramétricos de estimación software:
+COCOMO (Constructive Cost Model) II
+SLIM (Software LIfecycle Management)
+
+
+
+El Punto Función es “un método para medir el tamaño y la complejidad software 
+basándose en la cantidad de funcionalidad”
+Puntos Función:
+Puntos Casos de Uso (Use Case Points)
+
+
+

@@ -1,0 +1,42 @@
+
+postman
+
+Otras alternativas
+Fiddler
+Charles
+cURL
+SoapUI
+Paw
+Assertible
+Stoplight
+Insomnia
+
+
+Postman Echo - para pruebas
+
+curl -v "https://postman-echo.com/get?foo1=bar1&foo2=bar2"
+
+colecciones
+entornos-variables
+
+
+
+Markdown Cheatsheet: Repositorio de Github que contiene una referencia a la sintaxis de Markdown.
+Markdown Live Preview: Web en la que podrás practicar la sintaxis de Markdown.
+
+Antes de hablar de mocks, sería necesario introducir el concepto de dobles de prueba (test doubles).
+
+Un doble de prueba es un término genérico para cualquier caso donde se sustituya un objeto de producción con el propósito de probar algo. Se clasifican de la siguiente manera:
+
+Dummy: objetos que se suelen pasar entre componentes o sistemas pero que realmente no son utilizados por los mismos. Generalmente se usan para rellenar listas de datos.
+
+Fake: objetos que tienen una cierta implementación pero no está completa, sino que se ha desarrollado tomando algún atajo, por lo que no se podrían utilizar en producción.
+
+Stubs: proveen respuestas predefinidas a llamadas hechas durante la prueba. Generalmente no responden a nada fuera de lo que se ha programado para la prueba.
+
+Spies: son stubs que también recogen información sobre cómo han sido llamados. Por ejemplo, un servicio de email que almacena el número de mensajes que ha enviado. Se suelen utilizar para simular el comportamiento de un elemento externo que conduce el comportamiento del código bajo prueba.
+
+Mocks: están preprogramados para formar una especificación de las llamadas que esperan recibir. Pueden lanzar una excepción si reciben una llamada que no esperan. Se suelen utilizar para comprobar si el código bajo prueba se comunica correctamente con un elemento externo que conduce el comportamiento del código bajo prueba.
+
+
+

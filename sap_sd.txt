@@ -1,0 +1,11 @@
+
+
+
+
+BAPI_BILLINGDOC_DISPLAY
+
+
+tx VOFA = clases de documento resumen
+
+
+ZRFDEPL00 = documentos compensados

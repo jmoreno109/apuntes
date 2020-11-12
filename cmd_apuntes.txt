@@ -1,0 +1,22 @@
+netstat -an | find ":8080"
+
+
+//Create ‘My Task’ to run C:RunMe.bat at 9 AM everyday:
+SchTasks /Create /SC DAILY /TN “My Task” /TR “C:RunMe.bat” /ST 09:00
+
+
+
+//Simple example for how to set JAVA_HOME with setx.exe in command line
+setx JAVA_HOME "C:\Program Files (x86)\Java\jdk1.7.0_04"
+
+
+//If you want to set a variable for all users, you have to use option "-m"
+setx -m JAVA_HOME "C:\Program Files (x86)\Java\jdk1.7.0_04"
+
+
+netstat -aon |find /i "listening" |find "8080"
+taskkill /F /PID 189
+
+
+
+

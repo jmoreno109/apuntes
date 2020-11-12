@@ -1,0 +1,30 @@
+
+
+
+// JDBC - conexion a BD
+
+Class.forName("oracle.jdbc.driver.OracleDriver");
+Connection connection = DriverManager.getConnection("jdbc:oracle:thin:@192.168.11.43:1527:SICADES", "gsol","gsolqa");			
+Statement statement = connection.createStatement();
+ResultSet rs = statement.executeQuery("select NOMBRE_BANCO,CODIGO_BANCO from sc_banco");
+
+while (rs.next()) {				
+ String nbanco = rs.getString("NOMBRE_BANCO");
+ String cbanco = rs.getString("CODIGO_BANCO");
+ System.out.println("banco:"+nbanco+" - codigo:"+cbanco);				
+}
+
+
+		/*
+		 * Class.forName("oracle.jdbc.driver.OracleDriver"); Connection
+		 * connection = DriverManager.getConnection(
+		 * "jdbc:oracle:thin:@192.168.11.43:1527:SICADES", "sica",
+		 * "9ejv8QNNhczxnw__cfa"); Statement statement =
+		 * connection.createStatement(); ResultSet rs = statement .executeQuery
+		 * ("select id_caficultor,denominacion from SC_DATOS_ACREEDOR");
+		 * 
+		 * while (rs.next()) { String nbanco = rs.getString("id_caficultor");
+		 * String cbanco = rs.getString("denominacion");
+		 * System.out.println("id_caficultor:" + nbanco + " - denominacion:" +
+		 * cbanco); }
+		 */

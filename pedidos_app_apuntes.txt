@@ -1,0 +1,491 @@
+<core:View xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc"
+	xmlns="sap.m" controllerName="pedidos.FILiberacion" xmlns:html="http://www.w3.org/1999/xhtml"
+	xmlns:f="sap.ui.layout.form">
+	<SplitContainer id="split-app-id" initialMaster="master"
+		initialDetail="detail">
+		<masterPages>
+			<Page id="master" title="Liberación de Documentos"
+				showNavButton="true" navButtonPress="onPressAppBack">
+				<content>
+					<f:SimpleForm editable="false" layout="ResponsiveGridLayout"
+						id="SimpleForm">
+						<f:content id="FormContent">
+							<Label text="Nº documento" required="true" />
+							<Input width="100%" id="documento-id" maxLength="10" />
+							<Label text="Sociedad" required="true" />
+							<Select id="select-sociedad-id" forceSelection="false"
+								items="{/sociedades}">
+								<core:Item key="{sociedad-id}" text="{sociedad-desc}" />
+							</Select>
+							<Label text="Ejercicio" required="true" />
+							<Select id="select-ejercicio-id" forceSelection="false"
+								items="{/ejercicios}">
+								<core:Item key="{ejercicio-id}" text="{ejercicio-desc}" />
+							</Select>
+							<Button press="onSearch" text="Buscar" icon="sap-icon://inspection"
+								type="Emphasized"></Button>
+						</f:content>
+					</f:SimpleForm>
+				</content>
+			</Page>
+		</masterPages>
+		<detailPages>
+			<Page id="detail" title="Detalle del Documento" showNavButton="{device>/system/phone}"
+				navButtonPress="onPressMasterBack">
+				<content>
+					<Table id="table-items-id" items="{path:'/data'}" mode="SingleSelectLeft"
+						growingThreshold="8" growing="true" growingScrollToLoad="false"
+						selectionChange="onSelectionChange" class="sapUiResponsiveMargin">
+						<columns>
+							<Column minScreenWidth="" demandPopin="false">
+								<Text text="Posición" />
+							</Column>
+							<Column minScreenWidth="Small" demandPopin="true">
+								<Text text="Acreedor" />
+							</Column>
+							<Column minScreenWidth="Small" demandPopin="true">
+								<Text text="Bloqueo" />
+							</Column>
+							<Column minScreenWidth="" demandPopin="false">
+								<Text text="Importe" />
+							</Column>
+						</columns>
+						<items>
+							<ColumnListItem>
+								<cells>
+									<Text text="{buzei}" />
+									<Text text="{lifnr}" />
+									<Text text="{zlspr}" />
+									<Text
+										text="{parts:[{path:'wrbtr'},{path:'waers'}],
+										type:'sap.ui.model.type.Currency',
+										formatOptions:{showMeasure:true}}" />
+								</cells>
+							</ColumnListItem>
+						</items>
+					</Table>
+				</content>
+				<footer>
+					<Toolbar />
+				</footer>
+			</Page>
+		</detailPages>
+	</SplitContainer>
+</core:View>
+
+
+
+/**
+ * @author JULIAN MORENO AGUILAR
+ */
+sap.ui.define([ "sap/ui/core/mvc/Controller", "sap/m/MessageBox",
+		"sap/ui/model/json/JSONModel", "sap/ui/model/odata/v2/ODataModel",
+		"sap/m/MessageToast","sap/ui/Device","sap/ui/model/Filter" ], function(Controller, MessageBox, JSONModel,
+		ODataModel,MessageToast,Device,Filter) {
+	"use strict";
+
+	return Controller.extend("pedidos.FILiberacion", {
+
+		/**
+		 * Called when a controller is instantiated and its View controls (if
+		 * available) are already created. Can be used to modify the View before
+		 * it is displayed, to bind event handlers and do other one-time
+		 * initialization.
+		 * 
+		 * @memberOf pedidos.FILiberacion
+		 */
+		onInit : function() {
+			
+			var oDeviceModel = new JSONModel(Device);
+			oDeviceModel.setDefaultBindingMode("OneWay");
+			this.getView().setModel(oDeviceModel,"device");
+			
+			var oSociedades = {
+				"sociedades" : [ {
+					"sociedad-id" : "ALMC",
+					"sociedad-desc" : "ALMC"
+				}, {
+					"sociedad-id" : "CABS",
+					"sociedad-desc" : "CABS"
+				}, {
+					"sociedad-id" : "CO10",
+					"sociedad-desc" : "CO10"
+				} , {
+					"sociedad-id" : "CO15",
+					"sociedad-desc" : "CO15"
+				} , {
+					"sociedad-id" : "FON1",
+					"sociedad-desc" : "FON1"
+				} , {
+					"sociedad-id" : "FON2",
+					"sociedad-desc" : "FON2"
+				} , {
+					"sociedad-id" : "PROC",
+					"sociedad-desc" : "PROC"
+				}]
+			};
+			var oModelSociedad = new JSONModel(oSociedades);
+			var oSelectSociedad = this.getView().byId("select-sociedad-id");
+			oSelectSociedad.setModel(oModelSociedad);			
+						
+			var iItem = 1;
+			var iLimit = 2017;
+			var aYears = [];						
+			var dDate = new Date();
+			var iActualYear = dDate.getFullYear();
+			var iDiff = iActualYear - iLimit;
+			var aEjercicios = [];	
+			
+			aYears.push(iLimit);
+			while(iItem <= iDiff){
+				iLimit++;
+				aYears.push(iLimit);
+				iItem++;
+			}
+			
+			aYears.sort(function(a, b){return b-a});		
+	    	$(aYears).each(function(index, value) {
+		        var item = {};
+		        item ["ejercicio-id"] = ""+value+"";
+		        item ["ejercicio-desc"] = ""+value+"";
+		        aEjercicios.push(item);
+		    });
+		    
+		    var oEjercicios = {"ejercicios":aEjercicios};		
+			var oModelEjercicio = new JSONModel(oEjercicios);
+			var oSelectEjercicio = this.getView().byId("select-ejercicio-id");
+			oSelectEjercicio.setModel(oModelEjercicio);
+
+		},
+		
+		/**
+		 * @memberOf pedidos.FILiberacion
+		 */
+		onPressAccept : function() {		
+			oSplitPFI.toDetail("POLiberacionDetail", "slide");
+		},
+
+		/**
+		 * @memberOf pedidos.FILiberacion
+		 */
+		onPressDecline:function(){
+			this.fnCleanForm();					
+		},
+		
+		/**
+		 * @memberOf pedidos.FILiberacion
+		 */
+		fnCleanForm:function(){
+			this.getView().byId('documento-id').setValue("");			
+			this.getView().byId("select-sociedad-id").setSelectedKey("");			
+			this.getView().byId("select-ejercicio-id").setSelectedKey("");			
+			this.getView().byId("select-bloqueo-id").setSelectedKey("");
+			this.getView().byId('posicion-id').setValue("");			
+			this.getView().byId('acreedor-id').setValue("");		
+		},
+
+		/**
+		 * @memberOf pedidos.FILiberacion
+		 */	
+		oNavigationBackFirstView: function(){			
+			this.fnCleanForm();			
+			app.back();		
+		},
+
+		/**
+		 * @memberOf pedidos.FILiberacion
+		 */	
+		fnValidateFields: function(sBelnr,sBukrs,sGjahr,sZlspr) {
+			var bResponse = true;
+			if(sBelnr == null || sBelnr == "" 
+			|| sBukrs == null || sBukrs == "" 
+			|| sGjahr == null || sGjahr == "" 
+			|| sZlspr == null || sZlspr == ""){
+				MessageBox.error("Debe diligenciar todos los campos obligatorios");
+				bResponse = false;
+			}
+			return bResponse;
+		},
+		
+		/**
+		 * @memberOf pedidos.FILiberacion
+		 */
+		onSearch:function(){				
+			
+			var sBelnr = this.getView().byId('documento-id').getValue();
+			var sBukrs = this.getView().byId('select-sociedad-id').getSelectedKey();
+			var sGjahr = this.getView().byId('select-ejercicio-id').getSelectedKey();			
+			var oData = {event:"get_doc_fi_details",p_bukrs:sBukrs,p_belnr:sBelnr,p_gjahr:sGjahr};
+			
+			var sResponse = $.ajax({
+                type: "GET",
+                dataType: "json",
+                contentType : "application/json",
+                url: "index.do",
+                data: oData,
+                async: false,
+                success: function(json,textStatus, jqXHR){
+                },error:function( jqXHR, textStatus, errorThrown){}
+			}); 					
+		
+			if (sResponse.responseText == null || sResponse.responseText == "")
+				MessageToast.show("No se encontró información");
+			else{
+				var oSelectSociedad = this.getView().byId("table-items-id");
+				var oJsonData = $.parseJSON(sResponse.responseText);				
+				if(oJsonData.type != 'E'){
+					var oModelSociedad = new JSONModel(oJsonData);
+					oSelectSociedad.setModel(oModelSociedad);					
+					this.fnNavigationToDetail();				
+				}else{				
+					MessageBox.error(oJsonData.message);
+					oSelectSociedad.setModel(new JSONModel({data: []}));					
+				}
+    		}
+    	},
+
+		/**
+		 * @memberOf pedidos.FILiberacion
+		 */	
+		onSelectionChange:function(oEvent){
+			this.onOpenDialog();
+		},
+		
+		/**
+		 * @memberOf pedidos.FILiberacion
+		 */	
+	    onGetDialog : function () {	    	
+	        if (!this.oDialog) {
+	           this.oDialog = sap.ui.xmlfragment("pedidos.BlockDialog",this.getView().getController());
+	           this.getView().addDependent(this.oDialog);
+	        }
+	        return this.oDialog;
+	     },
+	     
+		/**
+		 * @memberOf pedidos.FILiberacion
+		 */	
+	     onOpenDialog : function () {
+	    	 
+	        this.onGetDialog().open();
+	        
+			var oTipoBloqueo = {
+					"bloqueos" : [ {
+						"bloqueo-id" : " ",
+						"bloqueo-desc" : "Autorizado el pago"
+					},{
+						"bloqueo-id" : "*",
+						"bloqueo-desc" : "Omitir cuenta"
+					},{
+						"bloqueo-id" : "A",
+						"bloqueo-desc" : "Bloqueado el Pago"
+					},{
+						"bloqueo-id" : "B",
+						"bloqueo-desc" : "Facturas Vencidas"
+					},{
+						"bloqueo-id" : "E",
+						"bloqueo-desc" : "Bloqueado x Embargo"
+					},{
+						"bloqueo-id" : "G",
+						"bloqueo-desc" : "PRG Genoma del Café"
+					},{
+						"bloqueo-id" : "H",
+						"bloqueo-desc" : "Falta Poliza"
+					},{
+						"bloqueo-id" : "I",
+						"bloqueo-desc" : "Faltante Por Definir"
+					},{
+						"bloqueo-id" : "J",
+						"bloqueo-desc" : "Falta Certificación"
+					},{
+						"bloqueo-id" : "N",
+						"bloqueo-desc" : "Trat.post.entr.pagos"
+					},{
+						"bloqueo-id" : "P",
+						"bloqueo-desc" : "Orden de pago"
+					},{
+						"bloqueo-id" : "R",
+						"bloqueo-desc" : "Verif.facturas"
+					},{
+						"bloqueo-id" : "T",
+						"bloqueo-desc" : "Bloqueado el pago"
+					},{
+						"bloqueo-id" : "V",
+						"bloqueo-desc" : "Traslado de pagos"
+					},{
+						"bloqueo-id" : "X",
+						"bloqueo-desc" : "Bloqueo Registros FI"
+					},{
+						"bloqueo-id" : "Z",
+						"bloqueo-desc" : "Bloqueo Tesorería"
+					} ]
+				};
+
+				var oModelBloqueo = new JSONModel(oTipoBloqueo);			
+				var oSelectBloqueo = sap.ui.getCore().byId("select-bloqueo-id");
+				oSelectBloqueo.setModel(oModelBloqueo);	       
+	        
+	     },
+	     
+	     /**
+	      * @memberOf pedidos.FILiberacion
+	      */
+	     onCloseDialog : function() {
+	    	 this.onGetDialog().close();
+	     },
+	     
+		/**
+		 * @memberOf pedidos.FILiberacion
+		 */	
+	     onPressAppBack:function(){
+	    	 var oSelectSociedad = this.getView().byId("table-items-id");
+	    	 oSelectSociedad.setModel(new JSONModel({data: []}));	    	 
+	    	 app.back();
+	     },
+	     
+		/**
+		 * @memberOf pedidos.FILiberacion
+		 */	     
+	     onPressMasterBack:function(){
+	    	 var splitApp = this.byId("split-app-id");
+			 var masterPage = this.getView().byId('master');
+			 splitApp.toDetail(masterPage.getId());
+	     },
+	     
+		/**
+		 * @memberOf pedidos.FILiberacion
+		 */
+	     onSaveDialog:function(oEvent){ 
+	    	 
+	    	 var oSelectedItem = oEvent.getParameter("selectedItem");
+	    	 var sZlspr = oSelectedItem.getTitle();
+	    	 
+	    	 MessageBox.show("¿ Está seguro que desea modificar el documento ?", {    		 
+	    		 icon : MessageBox.Icon.INFORMATION,
+				 title : "Liberación de Documentos",
+				 actions : [ MessageBox.Action.YES, MessageBox.Action.NO ],
+						textDirection : sap.ui.core.TextDirection.Inherit,
+				 onClose : function(oAction) {
+				 if (oAction === MessageBox.Action.YES) {
+					 this.fnActionYES(sZlspr);
+				 }else if(oAction === MessageBox.Action.NO){
+					 this.onOpenDialog();
+				 }
+				 }.bind(this)
+			 });
+        },
+        
+		/**
+		 * @memberOf app.FILiberacion
+		 */
+		fnActionYES : function(sZlspr) {
+				    	 
+	    	var iBuzeiColumn=0;
+	    	var iLifnrColumn=1;    	
+	    	var sBelnr = this.getView().byId('documento-id').getValue();
+			var sBukrs = this.getView().byId('select-sociedad-id').getSelectedKey();
+			var sGjahr = this.getView().byId('select-ejercicio-id').getSelectedKey();
+			var oTable = this.getView().byId("table-items-id");
+			var aRowItems = oTable.getSelectedItems();
+			var sBuzei = aRowItems[0].mAggregations.cells[iBuzeiColumn].getProperty("text");
+			var sLifnr = aRowItems[0].mAggregations.cells[iLifnrColumn].getProperty("text");			
+			
+			var bValidation = this.fnValidateFields(sBelnr,sBukrs,sGjahr,sZlspr);
+			
+			if(bValidation){
+				
+				var oData = {event:"release_doc_fi",p_bukrs:sBukrs,p_belnr:sBelnr,p_gjahr:sGjahr,p_zlspr:sZlspr,p_lifnr:sLifnr,p_buzei:sBuzei};
+		
+				var sResponse = $.ajax({
+	                type: "GET",
+	                dataType: "json",
+	                contentType : "application/json",
+	                url: "index.do",
+	                data: oData,
+	                async: false,
+	                success: function(json,textStatus, jqXHR){
+	                },error:function( jqXHR, textStatus, errorThrown){}
+				}); 					
+			
+				if (sResponse.responseText == null || sResponse.responseText == "")
+					MessageToast.show("No se encontró información");
+				else{
+					var oJsonData = $.parseJSON(sResponse.responseText);				
+					var sMessage = oJsonData.message;
+					if (sMessage != null){					
+						if(oJsonData.type == "S"){
+							MessageBox.success(sMessage, {
+							textDirection : sap.ui.core.TextDirection.Inherit,
+							onClose : function(oAction) {									
+								this.fnGetDocDetails();								
+							}.bind(this)});					    	
+						}else if(oJsonData.type == "E"){
+							MessageBox.error(sMessage);
+						}else{
+							MessageBox.warning(sMessage);
+						}
+					}					
+				}			
+		    }			
+		},
+        
+        /**
+         * @memberOf pedidos.FILiberacion
+         */
+        fnGetDocDetails:function(){
+			
+			var sBelnr = this.getView().byId('documento-id').getValue();
+			var sBukrs = this.getView().byId('select-sociedad-id').getSelectedKey();
+			var sGjahr = this.getView().byId('select-ejercicio-id').getSelectedKey();			
+			var oData = {event:"get_doc_fi_details",p_bukrs:sBukrs,p_belnr:sBelnr,p_gjahr:sGjahr};
+			
+			var sResponse = $.ajax({
+                type: "GET",
+                dataType: "json",
+                contentType : "application/json",
+                url: "index.do",
+                data: oData,
+                async: false,
+                success: function(json,textStatus, jqXHR){
+                },error:function( jqXHR, textStatus, errorThrown){}
+			}); 
+			
+			var oJsonData = $.parseJSON(sResponse.responseText);				
+			var oModelSociedad = new JSONModel(oJsonData);
+			var oSelectSociedad = this.getView().byId("table-items-id");
+			oSelectSociedad.setModel(oModelSociedad);	      	
+        },
+        
+        /**
+         * @memberOf pedidos.FILiberacion
+         */
+        fnNavigationToDetail:function(){
+			var splitApp = this.byId("split-app-id");
+			var masterPage = this.getView().byId('detail');
+			splitApp.toDetail(masterPage.getId());
+        },
+        
+        /**
+         * @memberOf pedidos.FILiberacion
+         */
+        handleSearch: function(oEvent) {
+			var sValue = oEvent.getParameter("value");
+			var oFilter = new Filter("bloqueo-id", sap.ui.model.FilterOperator.Contains, sValue);
+			var oBinding = oEvent.getSource().getBinding("items");
+			oBinding.filter([oFilter]);
+		}        
+        
+	});
+});
+
+
+
+<core:FragmentDefinition xmlns="sap.m"
+	xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form">
+	<SelectDialog id="select-bloqueo-id" noDataText="Clave de bloqueo no encontrada"
+		title="Seleccione Clave de Bloqueo" search="handleSearch" confirm="onSaveDialog"
+		cancel="handleClose" items="{/bloqueos}">
+		<StandardListItem title="{bloqueo-id}" description="{bloqueo-desc}"
+			iconDensityAware="false" iconInset="false" type="Active" />
+	</SelectDialog>
+</core:FragmentDefinition>

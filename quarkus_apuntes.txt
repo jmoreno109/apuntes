@@ -1,0 +1,12 @@
+
+Quarkus es un marco de Java integral y nativo de Kubernetes que se creó para las compilaciones nativas y las máquinas virtuales Java (JVM), el cual permite optimizar Java, especialmente para los contenedores y convertirla en una plataforma efectiva para entornos sin servidor, de nube y de Kubernetes.
+
+ofrece la información correcta a GraalVM para la compilación nativa de las aplicaciones.
+
+mvn io.quarkus:quarkus-maven-plugin:1.1.1.Final:create \
+    -DprojectGroupId=es.autentia.tutorial.film \
+    -DprojectArtifactId=filmoteca-quarkus \
+    -DclassName="es.autentia.tutorial.film.FilmResource" \
+    -Dpath="/films" \
+    -Dextensions="resteasy-jsonb"
+cd filmoteca-quarkus

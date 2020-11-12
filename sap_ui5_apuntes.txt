@@ -1,0 +1,841 @@
+
+
+https://jsonplaceholder.typicode.com/
+
+// revisar version sapui5
+http://saphanahdp.federacafe.cafedecolombia.com:8001/sap/public/bc/ui5_ui5/index.html
+http://gdellp04.gerfor.com:8000/sap/public/bc/ui5_ui5/index.html
+
+<script id="sap-ui-bootstrap"
+type="text/javascript"
+src="/sap/public/bc/ui5_ui5/1/resources/sap-ui-cachebuster/sap-ui-core.js"
+data-sap-ui-theme="sap_goldreflection"
+data-sap-ui-libs="sap.ui.commons">
+</script>
+
+
+
+
+XML View Conversion
+Many code samples are written in JavaScript. 
+To facilitate the conversion of these code samples into XML, OpenUI5 provides a generic conversion tool.
+To run the tool, proceed as follows:
+
+Run the OpenUI5 app in your browser, for example, open a page in the test suite.
+Open the support tool by choosing CTRL+ALT+SHIFT+S.
+Open the Control Tree panel.
+Select the root UI area in the tree on the left hand side.
+Open the Export tab and choose Export XML.
+Open the ZIP archive and extract the files to your file system.
+
+
+
+*************************************************************************************************************
+
+//definir los metodos en el controller.js
+
+// forma 1
+sap.ui.controller("app.Hello", {
+	
+	handleLinkPress: function () {			
+		jQuery.sap.require("sap.m.MessageBox");
+		sap.m.MessageBox.alert("This message should appear in the alert !!!",'',"Notification");		
+	}
+
+});
+
+// forma 2
+sap.ui.define([ "sap/ui/core/mvc/Controller", "sap/m/MessageBox" ], function(
+		Controller, MessageBox) {
+	"use strict";
+	return Controller.extend("app.Hello", {
+	
+		handleLinkPress : function() {			
+			// alert("Hello Worldsdsd");
+			MessageBox.alert("This message should appear in the alert !!!", '',
+					"Notification");
+		}
+		
+	});
+});
+
+
+*************************************************************************************************************
+
+
+// mensajes por consola
+
+	jQuery.sap.log.setLevel(jQuery.sap.log.Level.INFO); // activar
+	jQuery.sap.log.info("jm - iniciando !!! ");
+			
+
+*************************************************************************************************************		
+			
+
+http://services.odata.org/V4/TripPinServiceRW/Airports('KSFO')/Name
+http://services.odata.org/V4/TripPinServiceRW/People?$filter=FirstName eq 'Scott'
+
+
+*************************************************************************************************************
+
+
+
+// Instanciar un modelo, definir data localmente (onInit : function())
+
+
+//5 formas de instanciar un modelo = odata, json, xml , resource, custom
+
+var oModel = new sap.ui.model.odata.v2.ODataModel({serviceUrl: "http://services.odata.org/Northwind/Northwind.svc"});
+var oModel = new sap.ui.model.json.JSONModel();
+var oModel = new sap.ui.model.xml.XMLModel();
+var oModel = new sap.ui.model.resource.ResourceModel({bundleName:"myBundle",locale:"en"});
+
+
+// instanciar, definir la data a una tabla
+
+var oTable = this.getView().byId("idProductsTable");
+oTable.setModel(oModel1);
+
+
+
+// forma json 1
+
+	var oData = {
+		"ProductCollection" : [ {
+		"Name" : "Juancho",
+		"last" : "Santos",
+		"edad" : "25"
+		}, {
+		"Name" : "Luis",
+		"last" : "Gomez",
+		"edad" : "30"
+		} ]
+	};
+			
+	var oModel = new JSONModel(oData);
+	this.getView().setModel(oModel);
+
+
+// forma json 2
+			
+	var oModel = new sap.ui.model.json.JSONModel();
+	oModel.loadData("./products.json"); // WebContent/products.json
+	this.getView().setModel(oModel);
+
+
+
+*************************************************************************************************************
+
+
+// set i18n model on view
+//WebContent/app/i18n/i18n.properties
+
+var i18nModel = new ResourceModel({
+	bundleName: "app.i18n.i18n"
+});
+this.getView().setModel(i18nModel, "i18n");
+//sap.ui.getCore().setModel(i18nModel, "i18n");
+
+
+
+<Button text="{i18n>showHelloButtonText}" press="onShowHello" />
+
+
+*************************************************************************************************************
+
+sap.ui.define([ "sap/ui/core/mvc/Controller", "sap/m/MessageBox",
+		"sap/ui/model/json/JSONModel", "sap/ui/model/resource/ResourceModel" ],
+		function(Controller, MessageBox, JSONModel, ResourceModel) {
+			"use strict";
+			return Controller.extend("testapp.First", {
+
+
+			var oData = {
+				"ProductCollection" : [ {
+					"Name" : "Juancho",
+					"last" : "Santos",
+					"edad" : "25"
+				}, {
+					"Name" : "Luis",
+					"last" : "Gomez",
+					"edad" : "30"
+				} ]
+			};
+
+			var oModel = new JSONModel(oData);
+			var oTable = this.getView().byId("idProductsTable");
+			oTable.setModel(oModel);
+			
+			<Button text="Consultar" icon="sap-icon://search" press="onMsg" />
+				<Table id="idProductsTable" items="{/ProductCollection}">
+					<columns>
+						<Column>
+							<Text text="Name" />
+						</Column>
+						<Column>
+							<Text text="last" />
+						</Column>
+						<Column>
+							<Text text="edad" />
+						</Column>
+					</columns>
+					<items>
+						<ColumnListItem>
+							<cells>
+								<Link text="{Name}" />
+								<Link text="{last}" />
+								<Link text="{edad}" />
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+				
+
+*************************************************************************************************************				
+
+			var oModel2 = new ODataModel( "proxy/sap/opu/odata/sap/ZCDS_CONS_DEUDORES_CDS"
+			,{ user: 'aljmore' , password:'colombia2016' ,json:true});
+				
+				
+			var oModel2 = new sap.ui.model.odata.v2.ODataModel({
+			serviceUrl: "proxy/sap/opu/odata/sap/ZCDS_CONS_DEUDORES_CDS"},false,"aljmore","colombia2016");
+			
+			var oTable2 = this.getView().byId("idProductsTable2");
+			oTable2.setModel(oModel2);
+
+			<Table id="idProductsTable2" items="{/ZCDS_CONS_DEUDORES}"
+				mode="MultiSelect" growingThreshold="7" growing="true">
+				<columns>
+					<Column>
+						<Text text="kunnr" />
+					</Column>
+					<Column>
+						<Text text="ernam" />
+					</Column>
+					<Column>
+						<Text text="bukrs" />
+					</Column>
+					<Column>
+						<Text text="name1" />
+					</Column>
+					<Column>
+						<Text text="ort01" />
+					</Column>
+				</columns>
+				<items>
+					<ColumnListItem>
+						<cells>
+							<Link text="{kunnr}" />
+							<Link text="{ernam}" />
+							<Link text="{bukrs}" />
+							<Link text="{name1}" />
+							<Link text="{ort01}" />
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>	
+
+
+
+*************************************************************************************************************	
+
+
+	var model = new JSONModel(); 
+	model.loadData("proxy/sap/opu/odata/sap/ZCDS_CONS_DEUDORES_CDS/ZCDS_CONS_DEUDORES?$format=json");  
+	var tabla = this.getView().byId("stockinfo");
+	tabla.setModel(model);	
+	
+	
+	<Table id="stockinfo" items="{/d/results}" mode="MultiSelect"
+				growingThreshold="7" growing="true" select="onSelect"
+				selectionChange="onSelectionChange" itemPress="onItemPress">
+
+
+
+
+*************************************************************************************************************
+
+http://gdellp04.gerfor.com:8000/sap/opu/odata/iwfnd/catalogservice;v=2/ServiceCollection?sap-client=200
+
+
+// definir los destinations sapui5 on premise
+C:\Users\jmorenoa\Desktop\sap-webide-personal-edition-1.53.9-trial-win32.win32.x86_64\eclipse\config_master\service.destinations\destinations
+
+//destination
+Description=saphanahdp
+Type=HTTP
+TrustAll=true
+Authentication=NoAuthentication
+Name=saphanahdp
+ProxyType=Internet
+URL=http\://saphanahdp.federacafe.cafedecolombia.com:8001
+WebIDEUsage=odata_abap,ui5_execute_abap,odata_gen
+WebIDESystem=saphanahdp
+WebIDEEnabled=true
+
+//destination 2
+Description=saphanahdp
+Type=HTTP
+TrustAll=true
+Authentication=BasicAuthentication
+User=aljmore
+Password=colombia2016
+Name=saphanahdp
+ProxyType=Internet
+URL=http\://saphanahdp.federacafe.cafedecolombia.com:8001
+WebIDEUsage=odata_abap,ui5_execute_abap,odata_gen
+WebIDESystem=saphanahdp
+WebIDEEnabled=true
+
+//destination 3 - Crear archivo sin extension
+Description=ED1
+Type=HTTP
+TrustAll=true
+Authentication=BasicAuthentication
+User=jmorenag
+Password=Colombia2019+
+Name=ED1
+ProxyType=Internet
+URL=http\://gdellp04.gerfor.com:8000
+WebIDEUsage=odata_gen,odata_abap,ui5_execute_abap,dev_abap,bsp_execute_abap
+WebIDESystem=ED1
+WebIDEEnabled=true
+sap-client=200
+
+
+
+************************************************************************************************************
+
+
+
+	var oModel = this.getView().getModel("TestModelo");
+	
+			oModel.read("/ZCDS_CONS_DEUDORES", {
+				success: function(oRetrievedResult) {
+
+					$.sap.log.setLevel(jQuery.sap.log.Level.INFO); // activar
+					$.sap.log.info("jm - success: function(oRetrievedResult)");
+					
+					var data = oRetrievedResult.results[0];
+					var datosJSON = JSON.stringify(data);
+					
+					$.sap.log.info("jm -->" + datosJSON);
+
+			//this.getView().byId("ACTIVITY").getSelectedKey();
+			//this.getView().byId("ACTIVITY").getSelectedItem().getText();
+
+				},
+				error: function(oError) { /* do something */ }
+			});
+	
+	
+	<Button xmlns="sap.m" text="enviar" press="onPress"></Button>
+	<Table id="idProductsTable2" items="{/ZCDS_CONS_DEUDORES}" mode="MultiSelect" growingThreshold="7" growing="true"
+	selectionChange="onSelectionChange" itemPress="onItemPress">
+	
+
+	
+************************************************************************************************************
+	
+	How to Know When a Model Is Loaded?
+Use the success callback of you request. For example, the success callback of a read request.
+
+// in your controller 
+onInit: function() {
+   
+  var oModel = this.getOwnerComponent().getModel();
+   
+  oModel.read("/path", {
+         
+    success: function(oEvent) { 
+       
+      // data loaded             
+      // oEvent.results contains the read data         
+ 
+    }); 
+ 
+}
+Or attach the requestCompleted Event to the model.
+
+
+// in your controller 
+onInit: function() {     
+   
+  var oModel = this.getOwnerComponent().getModel();          
+   
+  oModel.attachRequestCompleted(function(oEvent) {         
+   
+    // data of the model is loaded if the loading was successful         
+    // check oEvent.getParameters("success") whether the model loaded successful     
+ 
+  }); 
+ 
+}
+
+************************************************************************************************************
+
+			 var oParameters = {
+					 "Userid" : "3",//$('#id1').val(),
+					 "Name" : "tres",//$('#id2').val(),
+					 "Designation" : "tres", // $('#id3').val(),
+					 };
+			 
+
+			var oModel = new ODataModel(
+					"proxy/sap/opu/odata/sap/ZEMP_RECORDS_SRV", {
+					user : 'aljmore',
+					password : 'colombia2016',
+					json : true
+					});
+			 
+			 var sServiceUrl = "/UsersSet";
+			 oModel.create(sServiceUrl, oParameters,null,
+				 function(odata,response){
+				 console.log("success");
+				 },
+				 function(err){
+				 console.log(err);
+				 }
+		     );	 
+			 
+
+			 
+************************************************************************************************************			 
+			 
+
+			<f:SimpleForm>
+				<Label text="Enter your name" required="true" />
+				<Input liveChange="handleUserInput" value=""/>
+			</f:SimpleForm>
+
+		handleUserInput: function(oEvent) {
+			var sUserInput = oEvent.getParameter("value");
+			var oInputControl = oEvent.getSource();
+			if(sUserInput) {
+				oInputControl.setValueState(sap.ui.core.ValueState.Success);
+			} else {
+				oInputControl.setValueState(sap.ui.core.ValueState.Error);
+			}
+		}
+
+
+************************************************************************************************************	
+
+// Input - Suggestions - Dynamic
+
+			<Label text="Product" labelFor="productInput" />
+			<Input
+				id="productInput"
+				type="Text"
+				placeholder="Enter Product ..."
+				showSuggestion="true"
+				suggest="handleSuggest"
+				suggestionItems="{/ProductCollection}" >
+				<suggestionItems>
+					<core:Item text="{Name}" />
+				</suggestionItems>
+			</Input>
+			
+	    onInit: function() {
+	    	
+			var oSociedades = {
+				"ProductCollection" : [ 
+					                        
+					 {
+					    "ProductId": "HT-1000",
+					    "Name": "Notebook Basic 15"
+					 },
+					 {
+					 	"ProductId": "HT-1001",
+					 	"Name": "Notebook Basic 17"
+               		 }
+					
+					]
+				};
+				var oModel = new JSONModel(oSociedades);
+				this.getView().setModel(oModel);
+
+		},			
+			
+			
+			
+	handleSuggest: function(oEvent) {
+		var sTerm = oEvent.getParameter("suggestValue");
+		var aFilters = [];
+		if (sTerm) {
+			aFilters.push(new Filter("Name", sap.ui.model.FilterOperator.StartsWith, sTerm));
+		}
+		oEvent.getSource().getBinding("suggestionItems").filter(aFilters);
+	}	
+
+	
+************************************************************************************************************
+	
+	// obtener attachRequestCompleted
+
+			var oModel = new JSONModel("proxy/sap/opu/odata/sap/ZCDS_CONS_DEUDORES_CDS/ZCDS_CONS_DEUDORES?$format=json"); 
+			
+			oModel.attachRequestCompleted(function(){
+				
+				$.sap.log.info("jm INICIANDO ==>"+oModel.getJSON());
+				
+			});	
+			
+
+
+************************************************************************************************************
+
+
+// Input - Suggestions - Dynamic JSON
+
+
+			<Label text="Product" labelFor="productInput" />
+			<Input
+				id="productInput"
+				type="Text"
+				placeholder="Enter Product ..."
+				showSuggestion="true"
+				suggest="handleSuggest"
+				suggestionItems="{/d/results}" >
+				<suggestionItems>
+					<core:Item text="{kunnr}" />
+				</suggestionItems>
+			</Input>
+
+	    onInit: function() {
+
+		var oModel = new JSONModel("proxy/sap/opu/odata/sap/ZCDS_CONS_DEUDORES_CDS/ZCDS_CONS_DEUDORES?sap-client=410&$select=kunnr&$format=json"); 
+
+		oModel.attachRequestCompleted(function() {				
+			$.sap.log.info("jm INICIANDO ==>"+oModel.getJSON());		
+			 sap.ui.getCore().setModel(oModel);			
+		});		
+		}	
+
+	handleSuggest: function(oEvent) {
+
+    	var sTerm = oEvent.getParameter("suggestValue");
+
+		var aFilters = [];
+		if (sTerm) {
+			aFilters.push(new Filter("kunnr", sap.ui.model.FilterOperator.StartsWith, sTerm));
+		}
+		oEvent.getSource().getBinding("suggestionItems").filter(aFilters);
+
+	}
+	
+	
+	});	
+
+
+	
+	************************************************************************************************************
+
+
+// controller
+// with key generation
+ 
+// get model
+var oModel = this.getView().getModel();
+ 
+// create primary keys with key generation
+var sPath = oModel.createKey("/Products", {
+ 
+  ProductID1: "foo",
+  ProductID2: "bar"
+ 
+});
+ 
+// read the product with the primary keys foo and bar
+oModel.read(sPath, {
+ 
+  success: function(oData) { sap.base.Log.info(oData); },
+  error: function(oData) { sap.base.Log.info(oData); }
+ 
+});	
+
+
+
+************************************************************************************************************
+
+
+// ejemplo CRUD ODATA
+
+
+//READ
+
+	onRead : function() {
+	
+	    //var oModel2 = this.getView().getModel("comisiones");
+		
+		$.sap.log.setLevel(jQuery.sap.log.Level.INFO); // activar
+
+
+		var url = "proxy/sap/opu/odata/sap/ZEMP_RECORDS_SRV/";
+		var oModel = new ODataModel(url, true, "aljmore", "colombia2016");
+		
+		
+		//var sServiceUrl = oModel.createKey("/UsersSet", {
+			//Userid : "2"
+		//});
+		
+		var sServiceUrl = "/UsersSet";
+		
+		oModel.read(sServiceUrl, {
+
+			success : function(oData) {			
+	
+				var data = oData.results[0];
+				var datosJSON = JSON.stringify(data);
+				
+				//$.sap.log.info(oData.Name);
+				//$.sap.log.info(JSON.stringify(oData)); // javascript object to json
+				
+			},
+			error : function(oData) {				
+				jQuery.sap.log.info("jm - error !!! ");				
+			}
+		});
+
+	};
+	
+//CREATE	
+	
+	onCreate : function() {
+		
+		$.sap.log.setLevel(jQuery.sap.log.Level.INFO); // activar
+		
+		var userid = this.getView().byId('id1').getValue();
+		var name = this.getView().byId('id2').getValue();
+		var description = this.getView().byId('id3').getValue();
+		
+		var oParameters = {
+				 "Userid" : userid,
+				 "Name" : name,
+				 "Designation" : description, 
+		};
+		 		
+		var url = "proxy/sap/opu/odata/sap/ZEMP_RECORDS_SRV/";
+		var oModel = new ODataModel(url, true, "aljmore", "colombia2016");		
+
+        oModel.create("/UsersSet", oParameters, {			
+			success: function(oData){				
+				jQuery.sap.log.info("jm - ok !!! "+JSON.stringify(oData));				
+			}, 	
+			
+			error: function(oData){
+				jQuery.sap.log.info("jm - error !!! ");				
+			}		
+		}		
+		);
+		
+	},
+
+//REMOVE
+	
+		onRemove:function(){
+		
+		$.sap.log.setLevel(jQuery.sap.log.Level.INFO); // activar
+		
+		var userid = this.getView().byId('id1').getValue();	 
+		
+		var url = "proxy/sap/opu/odata/sap/ZEMP_RECORDS_SRV/";
+		var oModel = new ODataModel(url, true, "aljmore", "colombia2016");
+		
+		var sServiceUrl = "/UsersSet('"+userid+"')";			
+		
+        oModel.remove(sServiceUrl, {
+			
+			success: function(oData,response){				
+				jQuery.sap.log.info("jm - borrado correctamente");				
+			}, 					
+			error: function(oData,response){
+				jQuery.sap.log.info("jm - error al borrado");				
+			}		
+		}		
+		);	
+		
+	
+************************************************************************************************************
+
+// USING POST REQUEST JSON
+	
+		
+		var oParameters = '{"customerName":"A*","maxRows":"1","webUser":"*"}';		
+		
+		var oHeaders = {
+			"Content-Type": "application/json",
+			"Content-Type": "application/x-www-form-urlencoded"
+		};
+		
+		var oModel = new JSONModel();
+		
+		oModel.loadData("proxy/rs-test/customer/search",oParameters,true,"POST",null,false,oHeaders);
+
+		oModel.attachRequestCompleted(function(data) {		
+		     $.sap.log.info("!!! jm info ==>"+oModel.getJSON());	
+		});
+		
+		var oTable = this.getView().byId("idCustomer");
+		oTable.setModel(oModel);	
+		
+		
+		
+************************************************************************************************************
+
+
+// ejemplo UI5
+
+<!DOCTYPE html>
+<title>SAPUI5</title>
+<script
+        id="sap-ui-bootstrap"
+        src="https://sapui5.hana.ondemand.com/resources/sap-ui-core.js" 
+        data-sap-ui-theme="sap_belize"
+        data-sap-ui-compatVersion="edge"
+        data-sap-ui-preload="async" >
+</script>
+<body>
+  <script id="myView" type="ui5/xmlview">
+    <mvc:View 
+      controllerName="com.timodenk.sapui5.example.controller.App"
+      xmlns="sap.m"
+      xmlns:core="sap.ui.core"
+      xmlns:mvc="sap.ui.core.mvc">
+      
+      <Select id="selectId" items="{modelPath>/arrayName}" change="onSelectionChanged">
+        <core:ListItem key="{modelPath>name}" text="{modelPath>name}" />
+      </Select>
+    </mvc:View>
+  </script>
+  
+  <main id="content"></main>
+</body>
+
+sap.ui.getCore().attachInit(function() {
+  
+  // define controller
+  sap.ui.define([
+    "sap/ui/core/mvc/Controller",
+    "sap/m/MessageToast"
+  ], function (Controller, MessageToast) {
+    "use strict";
+    return Controller.extend("com.timodenk.sapui5.example.controller.App", {
+      onInit: function () {
+        var model = new sap.ui.model.json.JSONModel();
+        model.setData({ 
+          arrayName: [
+            { name: "First Item", value: 100 },
+            { name: "Second Item", value: 123 }
+          ]
+        });
+        this.getView().setModel(model, "modelPath");
+      },
+      onSelectionChanged: function(oEventArgs) {
+        var selectedItem = oEventArgs.getSource().getSelectedItem();
+        var context = selectedItem.getBindingContext("modelPath");
+        // get binding object (reference to an object of the original array)
+        var arrayObject = context.oModel.getProperty(context.sPath);
+        var value = arrayObject.value;
+        MessageToast.show(value);
+      }
+    });
+  });
+  
+  // add XML view
+  sap.ui.xmlview({
+    viewContent: jQuery("#myView").html()
+  }).placeAt("content");
+});		
+
+
+************************************************************************************************************
+
+
+// ejemplo UI5
+
+<!DOCTYPE html>
+<title>SAPUI5</title>
+<script
+        id="sap-ui-bootstrap"
+        src="https://sapui5.hana.ondemand.com/resources/sap-ui-core.js" 
+        data-sap-ui-theme="sap_belize"
+        data-sap-ui-compatVersion="edge"
+        data-sap-ui-preload="async" >
+</script>
+<body>
+  <script id="myView" type="ui5/xmlview">
+    <mvc:View 
+      controllerName="com.timodenk.sapui5.example.controller.App"
+      xmlns="sap.m"
+      xmlns:core="sap.ui.core"
+      xmlns:mvc="sap.ui.core.mvc">
+      
+      <Table items="{ path: 'modelPath>/arrayName' }">
+        <columns>
+          <Column><Text text="Name" /></Column>
+          <Column><Text text="Age" /></Column>
+          <Column></Column>
+        </columns>
+        <items>
+          <ColumnListItem>
+            <cells>
+              <Text text="{modelPath>firstName} {modelPath>lastName}" />
+              <Text text="{modelPath>age} years" />
+              <Button press="rowClicked" icon="sap-icon://hint" />
+            </cells>
+          </ColumnListItem>
+        </items>
+      </Table>
+    </mvc:View>
+  </script>
+  
+  <main id="content"></main>
+</body>
+
+
+sap.ui.getCore().attachInit(function() {
+  
+  // define controller
+  sap.ui.define([
+    "sap/ui/core/mvc/Controller",
+    "sap/m/MessageToast"
+  ], function (Controller, MessageToast) {
+    "use strict";
+    return Controller.extend("com.timodenk.sapui5.example.controller.App", {
+      onInit: function() {
+        var model = new sap.ui.model.json.JSONModel();
+        model.setData({ 
+          arrayName: [
+            { firstName: "Albert", lastName: "Einstein", age: 76, born: 1879 },
+            { firstName: "Thomas", lastName: "Edison", age: 84, born: 1847 },
+            { firstName: "Neil", lastName: "Armstrong", age: 82, born: 1930 }
+          ]
+        });
+        this.getView().setModel(model, "modelPath");
+      },
+      
+      rowClicked: function(oEventArgs) {
+        var row = oEventArgs.getSource();
+        var context = row.getBindingContext("modelPath");
+
+        // get binding object (reference to an object of the original array)
+        var person = context.oModel.getProperty(context.sPath);
+        
+        MessageToast.show(person.firstName + " was born in " + person.born + ".")
+      }
+    });
+  });
+  
+  // add XML view
+  sap.ui.xmlview({
+    viewContent: jQuery("#myView").html()
+  }).placeAt("content");
+});
+
+
+	
+		
+		
+		
+		

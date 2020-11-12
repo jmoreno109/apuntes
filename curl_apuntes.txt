@@ -1,0 +1,12 @@
+
+
+// FTP Puedes usarlo para descargar archivos de un servidor remoto.
+curl -u username:password -O ftp://sampleftpserver/testfile.tar.gz
+curl ftp://DIRECCION_SERVIDOR/NOMBRE_ARCHIVO -user USUARIO:CONTRASEÑA -o NOMBRE_ARCH
+
+// enviar correo usando el protocolo smtp
+curl -n --ssl-reqd --mail-from "EMAIL_ORIGEN" --mail-rcpt "EMAIL_DESTINO" --url smtps://smtp.gmail.com:465 -u 'EMAIL_ORIGEN:CONTRASEÑA' -T mail.txt
+
+
+// Peticion POST con JSON
+curl -i -X POST localhost:8080/app/v1/users -H "Content-Type:application/json" -d "{\"id\":\"85\"}"

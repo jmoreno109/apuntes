@@ -1,0 +1,82 @@
+
+https://account.us1.hana.ondemand.com/cockpit#/home/allaccounts
+
+/IWFND/MAINT_SERVICE
+/n/IWFND/MAINT_SERVICE
+
+http://saphanahdp.federacafe.cafedecolombia.com:8001/sap/opu/odata/sap/ZCDS_CONS_DEUDORES_CDS/?$format=xml
+http://saphanahdp.federacafe.cafedecolombia.com:8001/sap/opu/odata/sap/ZCDS_CONS_DEUDORES_CDS/ZCDS_CONS_DEUDORES
+http://saphanahdp.federacafe.cafedecolombia.com:8001/sap/opu/odata/sap/ZCDS_CONS_DEUDORES_CDS/ZCDS_CONS_DEUDORES?$top=2
+http://saphanahdp.federacafe.cafedecolombia.com:8001/sap/opu/odata/sap/ZCDS_CONS_DEUDORES_CDS/ZCDS_CONS_DEUDORES?$select=kunnr
+http://saphanahdp.federacafe.cafedecolombia.com:8001/sap/opu/odata/sap/ZCDS_CONS_DEUDORES_CDS/ZCDS_CONS_DEUDORES?$filter=bukrs eq 'FON2'
+http://saphanahdp.federacafe.cafedecolombia.com:8001/sap/opu/odata/sap/ZCDS_CONS_DEUDORES_CDS/ZCDS_CONS_DEUDORES?$filter=bukrs eq 'FON2'&$orderby=kunnr
+
+
+
+
+
+01. Read the service root
+http://services.odata.org/V4/TripPinService/
+
+
+02. Read the service metadata
+http://services.odata.org/V4/TripPinService/$metadata
+
+
+03. Read an entity set
+http://services.odata.org/V4/TripPinService/People
+
+
+04. Get a single entity from an entity set
+http://services.odata.org/V4/TripPinService/People('russellwhyte')
+
+
+05. Get a primitive property
+http://services.odata.org/V4/TripPinService/People('russellwhyte')/FirstName
+
+
+06. Get the raw value of a primitive property
+http://services.odata.org/V4/TripPinService/People('russellwhyte')/FirstName/$value
+
+
+07. Navigate to related entities
+http://services.odata.org/V4/TripPinService/People('russellwhyte')/Friends('scottketchum')/AddressInfo
+
+
+08. Filter a collection
+http://services.odata.org/V4/TripPinService/People?$filter=FirstName eq 'Vincent'
+
+
+09. Filter on enumeration properties
+http://services.odata.org/V4/TripPinService/People?$filter=Gender eq Microsoft.OData.SampleService.Models.TripPin.PersonGender'Female'
+
+
+10. Filter on nested structures
+http://services.odata.org/V4/TripPinService/Airports?$filter=Location/City/Region eq 'California'
+
+
+11. Filter using logic operators
+http://services.odata.org/V4/TripPinService/People?$filter=not(contains(FirstName,'Q')) 
+and (AddressInfo/any(ai:ai/City/Region eq 'WA') or AddressInfo/any(ai:ai/City/Region eq 'ID'))
+
+
+12. Filter using any/all operators
+http://services.odata.org/V4/TripPinService/People?$filter=Emails/any(e: endswith(e, 'contoso.com'))
+
+
+13. Filter using built-in functions
+http://services.odata.org/V4/TripPinService/People('russellwhyte')/Trips(0)/PlanItems/Microsoft.OData.SampleService.Models.TripPin.Flight
+
+
+14. Sort a collection
+http://services.odata.org/V4/TripPinService/People?$orderby=length(FirstName) desc,UserName
+
+
+
+
+
+
+
+
+
+

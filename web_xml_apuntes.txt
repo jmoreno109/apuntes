@@ -1,0 +1,99 @@
+
+	
+	<!-- Add Support for Spring -->
+	<listener>
+		<listener-class>
+			org.springframework.web.context.ContextLoaderListener
+		</listener-class>
+	</listener>
+	<listener>
+		<listener-class>
+			org.springframework.web.context.request.RequestContextListener
+		</listener-class>
+	</listener>
+
+	<!-- ******************************************************************************** -->
+
+
+	<!-- JSF mapping -->
+	<servlet>
+		<servlet-name>Faces Servlet</servlet-name>
+		<servlet-class>javax.faces.webapp.FacesServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+ 
+	<!-- Map these files with JSF -->
+	<servlet-mapping>
+		<servlet-name>Faces Servlet</servlet-name>
+		<url-pattern>/faces/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>Faces Servlet</servlet-name>
+		<url-pattern>*.jsf</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>Faces Servlet</servlet-name>
+		<url-pattern>*.faces</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>Faces Servlet</servlet-name>
+		<url-pattern>*.xhtml</url-pattern>
+	</servlet-mapping>
+
+
+	<!-- ******************************************************************************** -->
+
+
+	<!-- configurar varios faces-config  -->
+	<context-param>
+		<param-name>javax.faces.CONFIG_FILES</param-name>
+		<param-value>WEB-INF/manage-beans.xml</param-value>
+	 </context-param>
+
+	<context-param>
+		<param-name>javax.faces.CONFIG_FILES</param-name>
+		<param-value>
+			/WEB-INF/faces-config.xml,
+			/WEB-INF/faces-managed-beans.xml,
+			/WEB-INF/navigation/faces-navigation-invoice.xml,
+			/WEB-INF/navigation/faces-navigation-security.xml,
+			/WEB-INF/navigation/faces-navigation-general.xml,
+			/WEB-INF/navigation/faces-navigation-catalog.xml,
+			/WEB-INF/navigation/faces-navigation-contract.xml,
+			/WEB-INF/navigation/faces-navigation-verifypay.xml,
+			/WEB-INF/navigation/faces-navigation-upload.xml,
+			/WEB-INF/navigation/faces-navigation-fertilizer-invoice.xml,
+			/WEB-INF/navigation/faces-navigation-admin.xml,
+			/WEB-INF/navigation/faces-navigation-admin-user.xml
+		</param-value>
+	</context-param>
+
+
+    <!-- Spring MVC  -->
+    <servlet>
+        <servlet-name>example</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>example</servlet-name>
+        <url-pattern>/example/*</url-pattern>
+    </servlet-mapping>
+
+  <servlet>
+    <servlet-name>springapp</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    <init-param>
+       <param-name>contextConfigLocation</param-name>
+       <param-value>/WEB-INF/spring/app-config.xml</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>springapp</servlet-name>
+    <url-pattern>*.htm</url-pattern>
+  </servlet-mapping>
+
+

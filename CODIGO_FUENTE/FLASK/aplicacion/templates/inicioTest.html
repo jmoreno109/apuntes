@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}titulo de prueba{% endblock %}
+
+{% block contenido %}
+	<h1>contendido de prueba</h1>
+
+	{% for cat in categorias %}
+		{{cat.nombre}}<br/>
+	{% endfor %}
+
+	<br/>
+
+	{% for art in articulos %}
+		{{art.nombre}}{{art.precio}}{{art.categoria.nombre|upper}}<br/>
+	{% endfor %}
+
+{% endblock %}
