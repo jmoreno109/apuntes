@@ -211,6 +211,7 @@ git show master@{yesterday}
 
 git remote -v // listar remotos
 git remote show origin
+git remote add origin https://github.com/jmoreno109/apuntes.git; git push origin master
 
 
 ■ git checkout
