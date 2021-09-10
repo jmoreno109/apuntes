@@ -103,6 +103,11 @@ IMPORTANTE: el propio .gitignore debería ser aprobado/committed al repositorio 
 # me va a hacer falta
 	git branch -d feature/feature_1
 	
+
+■ git clone
+
+git clone -b hotfix-test --single-branch git@company/code.git
+	
 	
 ■ git branch
 	
