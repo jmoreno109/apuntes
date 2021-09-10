@@ -208,8 +208,10 @@ git status -s
 
 git show
 git show --name-only <commit-hash> // lista archivos del commit
+git show --name-only 801fa2f // lista archivos del commit
 git show HEAD@{5}
 git show master@{yesterday}
+
 
 
 ■ git remote
