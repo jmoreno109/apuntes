@@ -107,6 +107,9 @@ IMPORTANTE: el propio .gitignore debería ser aprobado/committed al repositorio 
 ■ git clone
 
 git clone -b hotfix-test --single-branch git@company/code.git
+
+// Recuperar archivos del branch especifico
+git clone -b hotfix-direccion-co --single-branch git@code.test.git
 	
 	
 ■ git branch
